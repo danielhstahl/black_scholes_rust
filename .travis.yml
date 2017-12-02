@@ -1,29 +1,27 @@
 language: rust
 sudo: false
 rust:
-  - stable
-  - beta
-  - nightly
-
+- stable
+- beta
+- nightly
 matrix:
   allow_failures:
-    - rust: nightly
-
+  - rust: nightly
 env:
   global:
   - RUSTFLAGS="-C link-dead-code"
-
+  matrix:
+    secure: n64KBpUnlWyO2trP/AHOixOx4fiWBh9yZOB1VKGY2eaymr8dOXtK/SqWZ8xQaNlkn+SEI2zF5XwqNnXDbEigG1OeCHTFZcDnKxMnHWxZ5dN9P3OwfYlCsZL5rkRKC6Isc2IEbN2/M9Y0c4g2V9YJIWOOdTu56OyFjv6CO3SaOtychCeLWZ37sDsZQz3l6dmMmXO7IJrnPjNYYRON/4p3zg3SAGB7V6Hcq0APGzy8ugwc6q0t0sIfFBlIcWLM5dDhvulJTdW69c70whagSnrqilMZQ+hmAglFhKtEfHQr5Or1iGdlQw3vytURJ8QJ1SjxiUDHFUW2HgEPvarLXC2y9JJUqKUA+pfVTpTmJc8+k5886vrH549FtLnzp5YhSpu86IwNQT/fT7SrPiFXDPpSyXBm86dRdU48jDCyP+w999BunKB3r/x9wW0sHChPQzgZCzbFyAK5QgaJ/ArI+5Hh9mQWsRIKmv5swBiaNRL/t5UyRI9qK80QGffNLFLKTnaMzNuDjo/Od4rlvdZ2o33PaFKs2NXx63UKPj/GKfG5LonKWqjQXWeyWMSReMK1Iu9O6f/eITssvjmFPtKd50X8In/K8Nqd5qF+aKzcAEedDZ4TpV2okCrdfhZ9sMXFvYybKaPDg0cuxex168wgqVBVYC92O4QEv+1/1C4KS1zBrFk=
 addons:
   apt:
     packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - cmake
-      - gcc
-      - binutils-dev
-      - libiberty-dev
-
+    - libcurl4-openssl-dev
+    - libelf-dev
+    - libdw-dev
+    - cmake
+    - gcc
+    - binutils-dev
+    - libiberty-dev
 after_success: |
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
   tar xzf master.tar.gz &&
@@ -38,3 +36,11 @@ after_success: |
   for file in target/debug/black_scholes-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
   bash <(curl -s https://codecov.io/bash) &&
   echo "Uploaded code coverage"
+before_deploy:
+- cargo doc
+deploy:
+  provider: releases
+  on:
+    tags: true
+after_deploy:
+- cargo publish --token "$CARGO_API"
