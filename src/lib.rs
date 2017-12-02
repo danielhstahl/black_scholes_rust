@@ -1,8 +1,6 @@
 //! # black_scholes
 //! A Black Scholes option pricing library.
 extern crate special;
-//pub use black_scholes::call;
-////pub mod black_scholes {
 fn cum_norm(x:f64)->f64 {
     //is this some weird scope issue?
     use special::Error;
@@ -29,15 +27,12 @@ pub fn call(s:f64, k:f64, discount:f64, sigma:f64)->f64{
         return if s>k {s-k} else {0.0};
     }
 }
-//}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    //use super::black_scholes;
     #[test]
     fn call_formula_works() {
         assert_eq!(call(5.0, 4.5, (-0.05 as f64).exp(), 0.3), 0.9848721043419868);
     }
-}//
-//pub mod black_scholes;
+}
