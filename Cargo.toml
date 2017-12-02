@@ -7,5 +7,9 @@ repository = "https://github.com/phillyfan1138/black_scholes_rust"
 readme = "README.md"
 license = "MIT"
 description = "A Black Scholes option pricing library."
+
 [dependencies]
 special = "0.7"
+
+[badges]
+travis-ci = { repository = "phillyfan1138 / black_scholes_rust" }
