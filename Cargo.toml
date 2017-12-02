@@ -1,6 +1,6 @@
 [package]
 name = "black_scholes"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Daniel Stahl <danstahl1138@gmail.com>"]
 homepage = "https://github.com/phillyfan1138/black_scholes_rust"
 repository = "https://github.com/phillyfan1138/black_scholes_rust"
@@ -12,4 +12,4 @@ description = "A Black Scholes option pricing library."
 special = "0.7"
 
 [badges]
-travis-ci = { repository = "phillyfan1138 / black_scholes_rust" }
+travis-ci = { repository = "phillyfan1138/black_scholes_rust" }
