@@ -11,3 +11,8 @@
 # black_scholes_rust
 
 This is a simple Black Scholes option calculator written in rust.
+
+
+# tests
+
+Note that the greeks don't have direct tests.  Please feel free to add tests.  However, these formulas are essentially and extensively tested in the [fang oost option](https://github.com/phillyfan1138/fang_oost_option_rust) library.  
