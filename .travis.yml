@@ -1,5 +1,5 @@
 language: rust
-sudo: false
+sudo: required
 rust:
 - stable
 - beta
@@ -7,11 +7,6 @@ rust:
 matrix:
   allow_failures:
   - rust: nightly
-env:
-  global:
-  - RUSTFLAGS="-C link-dead-code"
-  matrix:
-    secure: n64KBpUnlWyO2trP/AHOixOx4fiWBh9yZOB1VKGY2eaymr8dOXtK/SqWZ8xQaNlkn+SEI2zF5XwqNnXDbEigG1OeCHTFZcDnKxMnHWxZ5dN9P3OwfYlCsZL5rkRKC6Isc2IEbN2/M9Y0c4g2V9YJIWOOdTu56OyFjv6CO3SaOtychCeLWZ37sDsZQz3l6dmMmXO7IJrnPjNYYRON/4p3zg3SAGB7V6Hcq0APGzy8ugwc6q0t0sIfFBlIcWLM5dDhvulJTdW69c70whagSnrqilMZQ+hmAglFhKtEfHQr5Or1iGdlQw3vytURJ8QJ1SjxiUDHFUW2HgEPvarLXC2y9JJUqKUA+pfVTpTmJc8+k5886vrH549FtLnzp5YhSpu86IwNQT/fT7SrPiFXDPpSyXBm86dRdU48jDCyP+w999BunKB3r/x9wW0sHChPQzgZCzbFyAK5QgaJ/ArI+5Hh9mQWsRIKmv5swBiaNRL/t5UyRI9qK80QGffNLFLKTnaMzNuDjo/Od4rlvdZ2o33PaFKs2NXx63UKPj/GKfG5LonKWqjQXWeyWMSReMK1Iu9O6f/eITssvjmFPtKd50X8In/K8Nqd5qF+aKzcAEedDZ4TpV2okCrdfhZ9sMXFvYybKaPDg0cuxex168wgqVBVYC92O4QEv+1/1C4KS1zBrFk=
 addons:
   apt:
     packages:
@@ -22,7 +17,7 @@ addons:
     - gcc
     - binutils-dev
     - libiberty-dev
-after_success: |
+after_success: |-
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
   tar xzf master.tar.gz &&
   cd kcov-master &&
@@ -38,3 +33,6 @@ after_success: |
   echo "Uploaded code coverage"
   cargo doc
   cargo publish --token "$CARGO_API" --allow-dirty
+env:
+  matrix:
+    secure: Oik+6HV2crwI8MY3rKotkzLl2YJV7Ok8RlF/3Ow9gNpdKNvPTXMTHRcgyfaTORNlR4uoluJG+BxRtjwIKjLn0Aikbd9MYZA650x9ADgYc05z4x/QhJZLN37GyAujsNw5wYVsvfO8jXsVOBPP2PkvoOP0tbSy4eZlf3dVeBpDpiTh4Dl9txTnkTTMpeZkT5MczU9hsO0DQO113y4uSTNtHFbZbKcaTtd5abwWI4efs+J0Jjjs7C8CoTtEIipmyAh6bedZEb/tW7aKgoEc31Yi7mpZc6cyv1KnB1WSg+1WXYlEtcsWGp5XjqXXDIRk45RWxTYcBlNmfpZGMX6eelDfFecPGBHBBX9DSIW65tRQ0vLvOesg1QsfnYUH7WgvvQVVffP0ut4X1yXoJO9PcX27XycoY3tHFkgJQm5hHjP+A+XLIqzYQD8JvkDbmGJp+N6tQfeKtqjqFc/PRaK7TzmDQnguHl3CYSfVaafI2focw4cl90HjRKTG6wA+OjN0A4t3c05nmE08FiIy3TunucCvo4/IF2lg5VIoNkDndcbDjxzfzQC3oMaRQHFifiULgPeQgv4CIxhDrgfynIwdoezKvcQoLvQ8uH2Llp8dVTdOtoX/IHJ69EAFoMHbPE9klyhIl8OsohCf4LZhPzP0yc0bii3JpTrr/RK1JT8UgPCKD2c=
