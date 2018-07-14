@@ -116,7 +116,7 @@ pub fn put_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     if sqrt_maturity_sigma>0.0{
         let discount=(-rate*maturity).exp();  
         let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
-        return 1.0-cum_norm(d1);
+        return cum_norm(d1)-1.0;
     }
     else{
         return if k>s {-1.0} else {0.0};
