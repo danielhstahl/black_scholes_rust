@@ -1,6 +1,6 @@
 [package]
 name = "black_scholes"
-version = "0.1.2"
+version = "0.2.1"
 authors = ["Daniel Stahl <danstahl1138@gmail.com>"]
 homepage = "https://github.com/phillyfan1138/black_scholes_rust"
 repository = "https://github.com/phillyfan1138/black_scholes_rust"

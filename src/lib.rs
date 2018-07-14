@@ -1,11 +1,14 @@
 //! # black_scholes
 //! A Black Scholes option pricing library.
 extern crate special;
+use std::f64::consts::PI;
+use std::f64::consts::SQRT_2;
+use special::Error;
 fn cum_norm(x:f64)->f64 {
-    //is this some weird scope issue?
-    use special::Error;
-    use std::f64::consts::SQRT_2;
     (x/SQRT_2).erf()*0.5+0.5
+}
+fn inc_norm(x:f64)->f64 {
+    (-x.powi(2)/2.0).exp()/(PI.sqrt()*SQRT_2)
 }
 /// Returns BS call option formula.
 ///
@@ -14,17 +17,69 @@ fn cum_norm(x:f64)->f64 {
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
-/// let discount=(-0.05 as f64).exp();
+/// let rate = 0.05;
 /// let sigma=0.3;
-/// assert_eq!(0.9848721043419868, black_scholes::call(stock, strike, discount, sigma));
+/// let maturity=1.0;
+/// assert_eq!(0.9848721043419868, black_scholes::call(stock, strike, rate, sigma, maturity));
 /// ```
-pub fn call(s:f64, k:f64, discount:f64, sigma:f64)->f64{
-    if sigma>0.0{
-        let d1=(s/(k*discount)).ln()/sigma+0.5*sigma;
-        return s*cum_norm(d1)-k*discount*cum_norm(d1-sigma);
+pub fn call(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        s*cum_norm(d1)-k*discount*cum_norm(d1-sqrt_maturity_sigma)
     }
     else{
-        return if s>k {s-k} else {0.0};
+        if s>k {s-k} else {0.0}
+    }
+}
+
+pub fn call_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        cum_norm(d1)
+    }
+    else{
+        if s>k {1.0} else {0.0}
+    }
+}
+
+
+pub fn call_gamma(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_maturity_sigma=maturity.sqrt()*sigma;    
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        inc_norm(d1)/(s*sqrt_maturity_sigma)
+    }
+    else{
+        0.0
+    }
+}
+
+pub fn call_vega(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_maturity_sigma=maturity.sqrt()*sigma;    
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        s*inc_norm(d1)*sqrt_maturity_sigma/sigma
+    }
+    else{
+        0.0
+    }
+}
+pub fn call_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_t=maturity.sqrt();
+    let sqrt_maturity_sigma=sqrt_t*sigma;    
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        -s*inc_norm(d1)*sigma/(2.0*sqrt_t)-rate*k*discount*cum_norm(d1-sqrt_maturity_sigma)
+    }
+    else{
+        0.0
     }
 }
 /// Returns BS put option formula.
@@ -34,17 +89,52 @@ pub fn call(s:f64, k:f64, discount:f64, sigma:f64)->f64{
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
-/// let discount=(-0.05 as f64).exp();
-/// let sigma=0.3;
-/// assert_eq!(0.2654045145951993, black_scholes::put(stock, strike, discount, sigma));
+/// let rate = 0.05;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
+/// assert_eq!(0.2654045145951993, black_scholes::put(stock, strike, rate, sigma, maturity));
 /// ```
-pub fn put(s:f64, k:f64, discount:f64, sigma:f64)->f64{
-    if sigma>0.0{
-        let d1=(s/(k*discount)).ln()/sigma+0.5*sigma;
-        return k*discount*cum_norm(sigma-d1)-s*cum_norm(-d1);
+pub fn put(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();  
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        k*discount*cum_norm(sqrt_maturity_sigma-d1)-s*cum_norm(-d1)
     }
     else{
-        return if k>s {k-s} else {0.0};
+        if k>s {k-s} else {0.0}
+    }
+}
+
+pub fn put_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();  
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        return 1.0-cum_norm(d1);
+    }
+    else{
+        return if k>s {-1.0} else {0.0};
+    }
+}
+pub fn put_gamma(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    call_gamma(s, k, rate, sigma, maturity)//same as call
+}
+
+pub fn put_vega(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    call_vega(s, k, rate, sigma, maturity) //same as call
+}
+
+pub fn put_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
+    let sqrt_t=maturity.sqrt();
+    let sqrt_maturity_sigma=sqrt_t*sigma;    
+    if sqrt_maturity_sigma>0.0{
+        let discount=(-rate*maturity).exp();
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        -s*inc_norm(d1)*sigma/(2.0*sqrt_t)+rate*k*discount*cum_norm(-d1+sqrt_maturity_sigma)
+    }
+    else{
+        0.0
     }
 }
 
@@ -53,18 +143,18 @@ mod tests {
     use super::*;
     #[test]
     fn call_formula_works() {
-        assert_eq!(call(5.0, 4.5, (-0.05 as f64).exp(), 0.3), 0.9848721043419868);
+        assert_eq!(call(5.0, 4.5, 0.05, 0.3, 1.0), 0.9848721043419868);
     }
     #[test]
     fn call_formula_works_with_zero_vol() {
-        assert_eq!(call(5.0, 4.5, (-0.05 as f64).exp(), 0.0), 0.5);
+        assert_eq!(call(5.0, 4.5, 0.05, 0.3, 0.0), 0.5);
     }
     #[test]
     fn put_formula_works() {
-        assert_eq!(put(5.0, 4.5, (-0.05 as f64).exp(), 0.3), 0.2654045145951993);
+        assert_eq!(put(5.0, 4.5, 0.05, 0.3, 1.0), 0.2654045145951993);
     }
     #[test]
     fn put_formula_works_with_zero_vol() {
-        assert_eq!(put(5.0, 4.5, (-0.05 as f64).exp(), 0.0), 0.0);
+        assert_eq!(put(5.0, 4.5, 0.05, 0.3, 0.0), 0.0);
     }
 }
