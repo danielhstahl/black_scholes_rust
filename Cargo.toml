@@ -10,6 +10,8 @@ description = "A Black Scholes option pricing library."
 
 [dependencies]
 special = "0.7"
+nrfind = "1.0.2"
+approx = "0.2.0"
 
 [badges]
 travis-ci = { repository = "phillyfan1138/black_scholes_rust" }
