@@ -11,6 +11,7 @@ description = "A Black Scholes option pricing library."
 [dependencies]
 special = "0.7"
 nrfind = "1.0.2"
+[dev-dependencies]
 approx = "0.2.0"
 
 [badges]
