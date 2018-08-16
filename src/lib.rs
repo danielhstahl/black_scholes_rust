@@ -38,8 +38,7 @@ pub fn call(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
         if s>k {s-k} else {0.0}
     }
 }
-pub fn call_discount(s:f64, k:f64, discount:f64, sigma:f64, maturity:f64)->f64{
-    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
+pub fn call_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
     if sqrt_maturity_sigma>0.0{
         let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
         s*cum_norm(d1)-k*discount*cum_norm(d1-sqrt_maturity_sigma)
@@ -121,8 +120,7 @@ pub fn put(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
         if k>s {k-s} else {0.0}
     }
 }
-pub fn put_discount(s:f64, k:f64, discount:f64, sigma:f64, maturity:f64)->f64{
-    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
+pub fn put_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
     if sqrt_maturity_sigma>0.0{
         let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
         k*discount*cum_norm(sqrt_maturity_sigma-d1)-s*cum_norm(-d1)
