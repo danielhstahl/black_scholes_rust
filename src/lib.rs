@@ -15,6 +15,17 @@ fn cum_norm(x:f64)->f64 {
 fn inc_norm(x:f64)->f64 {
     (-x.powi(2)/2.0).exp()/(PI.sqrt()*SQRT_2)
 }
+
+pub fn call_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
+    if sqrt_maturity_sigma>0.0{
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        s*cum_norm(d1)-k*discount*cum_norm(d1-sqrt_maturity_sigma)
+    }
+    else{
+        if s>k {s-k} else {0.0}
+    }
+}
+
 /// Returns BS call option formula.
 ///
 /// # Examples
@@ -28,24 +39,7 @@ fn inc_norm(x:f64)->f64 {
 /// assert_eq!(0.9848721043419868, black_scholes::call(stock, strike, rate, sigma, maturity));
 /// ```
 pub fn call(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
-    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
-    if sqrt_maturity_sigma>0.0{
-        let discount=(-rate*maturity).exp();
-        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
-        s*cum_norm(d1)-k*discount*cum_norm(d1-sqrt_maturity_sigma)
-    }
-    else{
-        if s>k {s-k} else {0.0}
-    }
-}
-pub fn call_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
-    if sqrt_maturity_sigma>0.0{
-        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
-        s*cum_norm(d1)-k*discount*cum_norm(d1-sqrt_maturity_sigma)
-    }
-    else{
-        if s>k {s-k} else {0.0}
-    }
+    call_discount(s, k, (-rate*maturity).exp(), maturity.sqrt()*sigma)
 }
 
 
@@ -97,6 +91,17 @@ pub fn call_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
         0.0
     }
 }
+
+pub fn put_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
+    if sqrt_maturity_sigma>0.0{
+        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
+        k*discount*cum_norm(sqrt_maturity_sigma-d1)-s*cum_norm(-d1)
+    }
+    else{
+        if k>s {k-s} else {0.0}
+    }
+}
+
 /// Returns BS put option formula.
 ///
 /// # Examples
@@ -110,24 +115,7 @@ pub fn call_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
 /// assert_eq!(0.2654045145951993, black_scholes::put(stock, strike, rate, sigma, maturity));
 /// ```
 pub fn put(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
-    let sqrt_maturity_sigma=maturity.sqrt()*sigma;
-    if sqrt_maturity_sigma>0.0{
-        let discount=(-rate*maturity).exp();  
-        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
-        k*discount*cum_norm(sqrt_maturity_sigma-d1)-s*cum_norm(-d1)
-    }
-    else{
-        if k>s {k-s} else {0.0}
-    }
-}
-pub fn put_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
-    if sqrt_maturity_sigma>0.0{
-        let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
-        k*discount*cum_norm(sqrt_maturity_sigma-d1)-s*cum_norm(-d1)
-    }
-    else{
-        if k>s {k-s} else {0.0}
-    }
+    put_discount(s, k, (-rate*maturity).exp(), maturity.sqrt()*sigma)
 }
 
 pub fn put_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
