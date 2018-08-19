@@ -16,6 +16,22 @@ fn inc_norm(x:f64)->f64 {
     (-x.powi(2)/2.0).exp()/(PI.sqrt()*SQRT_2)
 }
 
+/// Returns BS call option formula with discount and volatility already computed.
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let discount = 0.99;
+/// let sigma = 0.3;
+/// let maturity:f64 = 2.0;
+/// let sqrt_maturity_sigma = sigma*maturity.sqrt();
+/// let price = black_scholes::call_discount(
+///     stock, strike, discount, 
+///     sqrt_maturity_sigma
+/// );
+/// ```
 pub fn call_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
     if sqrt_maturity_sigma>0.0{
         let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
@@ -26,7 +42,7 @@ pub fn call_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
     }
 }
 
-/// Returns BS call option formula.
+/// Returns standard BS call option formula.
 ///
 /// # Examples
 ///
@@ -42,7 +58,20 @@ pub fn call(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     call_discount(s, k, (-rate*maturity).exp(), maturity.sqrt()*sigma)
 }
 
-
+/// Returns delta of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let delta = black_scholes::call_delta(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn call_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     let sqrt_maturity_sigma=maturity.sqrt()*sigma;
     if sqrt_maturity_sigma>0.0{
@@ -55,7 +84,20 @@ pub fn call_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     }
 }
 
-
+/// Returns gamma of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let gamma = black_scholes::call_gamma(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn call_gamma(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     let sqrt_maturity_sigma=maturity.sqrt()*sigma;    
     if sqrt_maturity_sigma>0.0{
@@ -67,7 +109,20 @@ pub fn call_gamma(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
         0.0
     }
 }
-
+/// Returns vega of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let vega = black_scholes::call_vega(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn call_vega(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     let sqrt_maturity_sigma=maturity.sqrt()*sigma;    
     if sqrt_maturity_sigma>0.0{
@@ -79,6 +134,20 @@ pub fn call_vega(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
         0.0
     }
 }
+/// Returns theta of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let theta = black_scholes::call_theta(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn call_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     let sqrt_t=maturity.sqrt();
     let sqrt_maturity_sigma=sqrt_t*sigma;    
@@ -92,6 +161,22 @@ pub fn call_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     }
 }
 
+/// Returns BS put option formula with discount and volatility already computed.
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let discount = 0.99;
+/// let sigma = 0.3;
+/// let maturity:f64 = 2.0;
+/// let sqrt_maturity_sigma = sigma*maturity.sqrt();
+/// let price = black_scholes::put_discount(
+///     stock, strike, discount, 
+///     sqrt_maturity_sigma
+/// );
+/// ```
 pub fn put_discount(s:f64, k:f64, discount:f64, sqrt_maturity_sigma:f64)->f64{
     if sqrt_maturity_sigma>0.0{
         let d1=(s/(k*discount)).ln()/sqrt_maturity_sigma+0.5*sqrt_maturity_sigma;
@@ -118,6 +203,20 @@ pub fn put(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     put_discount(s, k, (-rate*maturity).exp(), maturity.sqrt()*sigma)
 }
 
+/// Returns delta of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let delta = black_scholes::put_delta(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn put_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     let sqrt_maturity_sigma=maturity.sqrt()*sigma;
     if sqrt_maturity_sigma>0.0{
@@ -129,14 +228,56 @@ pub fn put_delta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
         return if k>s {-1.0} else {0.0};
     }
 }
+/// Returns gamma of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let gamma = black_scholes::put_gamma(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn put_gamma(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     call_gamma(s, k, rate, sigma, maturity)//same as call
 }
 
+/// Returns vega of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let vega = black_scholes::put_vega(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn put_vega(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     call_vega(s, k, rate, sigma, maturity) //same as call
 }
 
+/// Returns theta of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let theta = black_scholes::put_theta(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn put_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     let sqrt_t=maturity.sqrt();
     let sqrt_maturity_sigma=sqrt_t*sigma;    
@@ -150,6 +291,22 @@ pub fn put_theta(s:f64, k:f64, rate:f64, sigma:f64, maturity:f64)->f64{
     }
 }
 
+/// Returns implied volatility from a call option
+///
+/// # Examples
+///
+/// ```
+/// let price = 1.0;
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let maturity = 1.0;
+/// let initial_guess = 0.3;
+/// let iv = black_scholes::call_iv(
+///     price, stock, strike, rate, 
+///     maturity, initial_guess
+/// );
+/// ```
 pub fn call_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_guess:f64)->f64{
     let obj_fn=|sigma|call(s, k, rate, sigma, maturity)-price;
     let dfn=|sigma|call_vega(s, k, rate, sigma, maturity);
@@ -157,6 +314,23 @@ pub fn call_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_guess:f6
     let iterations=20;
     nrfind::find_root(&obj_fn, &dfn, initial_guess, precision, iterations).unwrap()
 }
+
+/// Returns implied volatility from a put option
+///
+/// # Examples
+///
+/// ```
+/// let price = 0.3;
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let maturity = 1.0;
+/// let initial_guess = 0.3;
+/// let iv = black_scholes::put_iv(
+///     price, stock, strike, rate, 
+///     maturity, initial_guess
+/// );
+/// ```
 pub fn put_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_guess:f64)->f64{
     let obj_fn=|sigma|put(s, k, rate, sigma, maturity)-price;
     let dfn=|sigma|put_vega(s, k, rate, sigma, maturity);
