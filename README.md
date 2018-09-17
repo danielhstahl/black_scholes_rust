@@ -13,11 +13,14 @@
 This is a simple Black Scholes option calculator written in rust.  Documentation is on [crates.io](https://docs.rs/black_scholes/0.3.0/black_scholes/).
 
 ## using black_scholes_rust
+Put the following in your Cargo.toml:
 
 ```toml
 [dependencies]
 black_scholes = "0.3"
 ```
+
+Import and use:
 
 ```rust
 extern crate black_scholes;
