@@ -10,8 +10,31 @@
 
 # black_scholes_rust
 
-This is a simple Black Scholes option calculator written in rust.
+This is a simple Black Scholes option calculator written in rust.  Documentation is on [docs.rs](https://docs.rs/black_scholes/0.3.0/black_scholes/).
 
+## using black_scholes_rust
+Put the following in your Cargo.toml:
+
+```toml
+[dependencies]
+black_scholes = "0.3"
+```
+
+Import and use:
+
+```rust
+extern crate black_scholes;
+let stock = 5.0;
+let strike = 4.5;
+let discount = 0.99;
+let sigma = 0.3;
+let maturity:f64 = 2.0;
+let sqrt_maturity_sigma = sigma*maturity.sqrt();
+let price = black_scholes::call_discount(
+    stock, strike, discount, 
+    sqrt_maturity_sigma
+);
+```
 
 # tests
 
