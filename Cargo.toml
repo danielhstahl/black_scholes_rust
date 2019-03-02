@@ -1,12 +1,13 @@
 [package]
 name = "black_scholes"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Daniel Stahl <danstahl1138@gmail.com>"]
 homepage = "https://github.com/phillyfan1138/black_scholes_rust"
 repository = "https://github.com/phillyfan1138/black_scholes_rust"
 readme = "README.md"
 license = "MIT"
 description = "A Black Scholes option pricing library."
+edition = "2018"
 
 [dependencies]
 special = "0.7"

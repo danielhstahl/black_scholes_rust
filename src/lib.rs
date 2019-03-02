@@ -1,22 +1,10 @@
 //! # black_scholes
 //! A Black Scholes option pricing library.
-extern crate special;
-extern crate nrfind;
-use std::f64::consts::PI;
-use std::f64::consts::SQRT_2;
-use special::Error;
-#[macro_use]
-#[cfg(test)]
-extern crate approx;
 
-#[cfg(test)]
-extern crate rand;
-#[cfg(test)]
-use rand::{SeedableRng, StdRng};
-#[cfg(test)]
-use rand::distributions::Uniform;
-#[cfg(test)]
-use rand::distributions::{Distribution};
+use std::f64::consts::{PI, SQRT_2};
+use special::Error;
+
+
 
 fn cum_norm(x:f64)->f64 {
     (x/SQRT_2).erf()*0.5+0.5
@@ -406,6 +394,9 @@ pub fn put_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64)->f64{
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::{SeedableRng, StdRng};
+    use rand::distributions::{Distribution, Uniform};
+    use approx::*;
     fn get_rng_seed(seed:[u8; 32])->StdRng{
         SeedableRng::from_seed(seed) 
     }
