@@ -10,14 +10,18 @@
 
 # black_scholes_rust
 
-This is a simple Black Scholes option calculator written in rust.  Documentation is on [docs.rs](https://docs.rs/black_scholes/0.3.0/black_scholes/).
+This is a simple Black Scholes option calculator written in rust.  Documentation is on [docs.rs](https://docs.rs/black_scholes).
+
+## breaking changes
+
+The move from 0.4 to 0.5 results changed the IV api to return a `Result<f64, f64>` rather than an `f64`.
 
 ## using black_scholes_rust
 Put the following in your Cargo.toml:
 
 ```toml
 [dependencies]
-black_scholes = "0.3"
+black_scholes = "0.5"
 ```
 
 Import and use:
