@@ -315,14 +315,14 @@ fn approximate_vol(price:f64, s:f64, k:f64, rate:f64, maturity:f64)->f64{
 /// let iv = black_scholes::call_iv_guess(
 ///     price, stock, strike, rate, 
 ///     maturity, initial_guess
-/// );
+/// ).unwrap();
 /// ```
-pub fn call_iv_guess(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_guess:f64)->f64{
+pub fn call_iv_guess(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_guess:f64)->Result<f64, f64>{
     let obj_fn=|sigma|call(s, k, rate, sigma, maturity)-price;
     let dfn=|sigma|call_vega(s, k, rate, sigma, maturity);
     let precision=0.000001;
     let iterations=10000;
-    nrfind::find_root(&obj_fn, &dfn, initial_guess, precision, iterations).unwrap()
+    nrfind::find_root(&obj_fn, &dfn, initial_guess, precision, iterations)
 }
 /// Returns implied volatility from a call option
 ///
@@ -337,9 +337,9 @@ pub fn call_iv_guess(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_gu
 /// let iv = black_scholes::call_iv(
 ///     price, stock, strike, rate, 
 ///     maturity
-/// );
+/// ).unwrap();
 /// ```
-pub fn call_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64)->f64{
+pub fn call_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64)->Result<f64, f64>{
     let initial_guess=approximate_vol(price, s, k, rate, maturity);
     call_iv_guess(price, s, k, rate, maturity, initial_guess)
 }
@@ -358,14 +358,14 @@ pub fn call_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64)->f64{
 /// let iv = black_scholes::put_iv_guess(
 ///     price, stock, strike, rate, 
 ///     maturity, initial_guess
-/// );
+/// ).unwrap();
 /// ```
-pub fn put_iv_guess(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_guess:f64)->f64{
+pub fn put_iv_guess(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_guess:f64)->Result<f64, f64>{
     let obj_fn=|sigma|put(s, k, rate, sigma, maturity)-price;
     let dfn=|sigma|put_vega(s, k, rate, sigma, maturity);
     let precision=0.000001;
     let iterations=10000;
-    nrfind::find_root(&obj_fn, &dfn, initial_guess, precision, iterations).unwrap()
+    nrfind::find_root(&obj_fn, &dfn, initial_guess, precision, iterations)
 }
 /// Returns implied volatility from a put option
 ///
@@ -381,9 +381,9 @@ pub fn put_iv_guess(price:f64, s:f64, k:f64, rate:f64, maturity:f64, initial_gue
 /// let iv = black_scholes::put_iv(
 ///     price, stock, strike, rate, 
 ///     maturity
-/// );
+/// ).unwrap();
 /// ```
-pub fn put_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64)->f64{
+pub fn put_iv(price:f64, s:f64, k:f64, rate:f64, maturity:f64)->Result<f64, f64>{
     let c_price=price+s-k*(-rate*maturity).exp();
     let initial_guess=approximate_vol(c_price, s, k, rate, maturity);
     put_iv_guess(price, s, k, rate, maturity, initial_guess)
@@ -432,7 +432,7 @@ mod tests {
         let rate=0.05;
         let maturity=1.0;
         let price=call(s, k, rate, sigma, maturity);
-        assert_abs_diff_eq!(call_iv_guess(price, s, k, rate, maturity , initial_guess), sigma, epsilon=0.00000001);
+        assert_abs_diff_eq!(call_iv_guess(price, s, k, rate, maturity , initial_guess).unwrap(), sigma, epsilon=0.00000001);
     }
     #[test]
     fn call_iv_approx(){
@@ -463,12 +463,10 @@ mod tests {
             let initial_guess=approximate_vol(price, s, k, rate, maturity);
             //println!("s: {}, k: {}, sigma: {}, price: {}, initial_guess: {}", s, k, sigma, price, initial_guess);
             if price>0.000001{
-                let _iv=call_iv_guess(price, s, k, rate, maturity , initial_guess);
+                let _iv=call_iv_guess(price, s, k, rate, maturity , initial_guess).unwrap();
             }
             
         })
-        
-        //assert_abs_diff_eq!(call_iv(price, s, k, rate, maturity , initial_guess), sigma, epsilon=0.00000001);
     }
     #[test]
     fn call_iv_works_with_difficult(){
@@ -479,8 +477,7 @@ mod tests {
         let maturity=0.7599;
         let price=call(s, k, rate, sigma, maturity);
         println!("s: {}, k: {}, sigma: {}, price: {}", s, k, sigma, price);
-        let _iv=call_iv(price, s, k, rate, maturity);
-        //assert_abs_diff_eq!(call_iv(price, s, k, rate, maturity , initial_guess), sigma, epsilon=0.00000001);
+        let _iv=call_iv(price, s, k, rate, maturity).unwrap();
     }
     #[test]
     fn put_iv_works(){
@@ -491,6 +488,15 @@ mod tests {
         let rate=0.05;
         let maturity=1.0;
         let price=put(s, k, rate, sigma, maturity);
-        assert_abs_diff_eq!(put_iv(price, s, k, rate, maturity), sigma, epsilon=0.00000001);
+        assert_abs_diff_eq!(put_iv(price, s, k, rate, maturity).unwrap(), sigma, epsilon=0.00000001);
+    }
+    #[test]
+    fn call_iv_returns_err_if_no_possible_solution(){
+        let price=50.275;
+        let s=274.525;
+        let k=225.000;
+        let rate=0.0244;
+        let maturity=0.156;
+        assert!(call_iv(price, s, k, rate,maturity).is_err());
     }
 }
