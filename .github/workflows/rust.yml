@@ -6,9 +6,15 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
 
     steps:
     - uses: actions/checkout@v1
+    - uses: hecrj/setup-rust-action@master
+      with:
+        rust-version: ${{ matrix.rust }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests
@@ -17,12 +23,14 @@ jobs:
         RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads
       run: cargo test --verbose
     - name: coverage
+      if: matrix.rust == 'nightly' 
       run: |
         curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
         zip -0 ccov.zip `find . \( -name "black_scholes*.gc*" \) -print`
         ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
         bash <(curl -s https://codecov.io/bash) -f lcov.info
-    - name: Document
+    - name: Document 
       run: cargo doc
     - name: Publish
+      if: matrix.rust == 'stable'
       run: cargo publish --token ${{ secrets.CARGO_TOKEN }} --allow-dirty
