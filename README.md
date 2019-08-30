@@ -2,8 +2,9 @@
 | :---------------: | :-------------------: |
 | ![lin-badge]      | ![cov-badge]          |
 
-[lin-badge]: https://travis-ci.org/phillyfan1138/black_scholes_rust.svg?branch=master "Travis build status"
-[lin-link]:  https://travis-ci.org/phillyfan1138/black_scholes_rust "Travis build status"
+[lin-badge]: https://github.com/phillyfan1138/black_scholes_rust/workflows/Rust/badge.svg
+[lin-link]: https://github.com/phillyfan1138/black_scholes_rust/actions
+
 [cov-badge]: https://codecov.io/gh/phillyfan1138/black_scholes_rust/branch/master/graph/badge.svg
 [cov-link]:  https://codecov.io/gh/phillyfan1138/black_scholes_rust
 
@@ -35,11 +36,11 @@ let sigma = 0.3;
 let maturity:f64 = 2.0;
 let sqrt_maturity_sigma = sigma*maturity.sqrt();
 let price = black_scholes::call_discount(
-    stock, strike, discount, 
+    stock, strike, discount,
     sqrt_maturity_sigma
 );
 ```
 
 # tests
 
-Note that the greeks don't have direct tests.  Please feel free to add tests.  However, these formulas are essentially and extensively tested in the [fang oost option](https://github.com/phillyfan1138/fang_oost_option_rust) library.  
+Note that the greeks don't have direct tests.  Please feel free to add tests.  However, these formulas are essentially and extensively tested in the [fang oost option](https://github.com/phillyfan1138/fang_oost_option_rust) library.
