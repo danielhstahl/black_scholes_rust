@@ -30,7 +30,7 @@ jobs:
         curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
         zip -0 ccov.zip `find . \( -name "black_scholes*.gc*" \) -print`
         ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
-        bash <(curl -s https://codecov.io/bash) -f lcov.info
+        bash <(curl -s https://codecov.io/bash) -f lcov.info -t ${{ secrets.CODECOV_TOKEN }}
     - name: Document 
       run: cargo doc
     - name: Publish
