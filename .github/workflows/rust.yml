@@ -35,4 +35,4 @@ jobs:
       run: cargo doc
     - name: Publish
       if: matrix.rust == 'stable'
-      run: cargo publish --token ${{ secrets.CARGO_TOKEN }} --allow-dirty
+      run: cargo publish --token ${{ secrets.CARGO_TOKEN }} --allow-dirty || true
