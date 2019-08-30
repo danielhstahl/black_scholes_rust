@@ -1,0 +1,30 @@
+name: Rust
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: coverage
+      env:
+        CARGO_INCREMENTAL: 0
+        RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads
+      run: |
+        curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+        zip -0 ccov.zip `find . \( -name "black_scholes*.gc*" \) -print`
+        bash <(curl -s https://codecov.io/bash) -f lcov.info
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Document
+      run: cargo doc
+    - name: Publish
+      run: cargo publish --token ${{ secrets.CARGO_TOKEN }} --allow-dirty
