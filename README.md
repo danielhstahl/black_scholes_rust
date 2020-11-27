@@ -2,11 +2,11 @@
 | :---------------: | :-------------------: |
 | ![lin-badge]      | ![cov-badge]          |
 
-[lin-badge]: https://github.com/phillyfan1138/black_scholes_rust/workflows/Rust/badge.svg
-[lin-link]: https://github.com/phillyfan1138/black_scholes_rust/actions
+[lin-badge]: https://github.com/danielhstahl/black_scholes_rust/workflows/Rust/badge.svg
+[lin-link]: https://github.com/danielhstahl/black_scholes_rust/actions
 
-[cov-badge]: https://codecov.io/gh/phillyfan1138/black_scholes_rust/branch/master/graph/badge.svg
-[cov-link]:  https://codecov.io/gh/phillyfan1138/black_scholes_rust
+[cov-badge]: https://codecov.io/gh/danielhstahl/black_scholes_rust/branch/master/graph/badge.svg
+[cov-link]:  https://codecov.io/gh/danielhstahl/black_scholes_rust
 
 
 # black_scholes_rust
@@ -43,4 +43,4 @@ let price = black_scholes::call_discount(
 
 # tests
 
-Note that the greeks don't have direct tests.  Please feel free to add tests.  However, these formulas are essentially and extensively tested in the [fang oost option](https://github.com/phillyfan1138/fang_oost_option_rust) library.
+Note that the greeks don't have direct tests.  Please feel free to add tests.  However, these formulas are essentially and extensively tested in the [fang oost option](https://github.com/danielhstahl/fang_oost_option_rust) library.
