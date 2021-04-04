@@ -1,6 +1,10 @@
 name: Rust
 
-on: [push]
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
 
 jobs:
   build:
@@ -24,9 +28,10 @@ jobs:
       if: matrix.rust == 'nightly' 
       env:
         CARGO_INCREMENTAL: 0
-        RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads
+        RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests
         CRATE_NAME: black_scholes
       run: |
+        cargo clean
         cargo test
         curl -L https://github.com/mozilla/grcov/releases/download/v0.5.5/grcov-linux-x86_64.tar.bz2 | tar jxf -
         zip -0 ccov.zip `find . \( -name "${CRATE_NAME}*.gc*" \) -print`
