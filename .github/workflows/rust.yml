@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, nightly]
+        rust: [stable]
 
     steps:
     - uses: actions/checkout@v1
@@ -21,11 +21,9 @@ jobs:
         rust-version: ${{ matrix.rust }}
     - name: Build
       run: cargo build --verbose
-    - name: Run tests stable
-      if: matrix.rust == 'stable'
+    - name: Run tests
       run: cargo test --verbose
     - name: Document 
       run: cargo doc
     - name: Publish
-      if: matrix.rust == 'stable'
       run: cargo publish --token ${{ secrets.CARGO_TOKEN }} --allow-dirty || true
