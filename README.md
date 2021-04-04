@@ -22,7 +22,7 @@ Put the following in your Cargo.toml:
 
 ```toml
 [dependencies]
-black_scholes = "0.5"
+black_scholes = "0.6"
 ```
 
 Import and use:
@@ -41,6 +41,3 @@ let price = black_scholes::call_discount(
 );
 ```
 
-# tests
-
-Note that the greeks don't have direct tests.  Please feel free to add tests.  However, these formulas are essentially and extensively tested in the [fang oost option](https://github.com/danielhstahl/fang_oost_option_rust) library.
