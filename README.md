@@ -1,12 +1,12 @@
-| [Linux][lin-link] |  [Codecov][cov-link]  |
+| [Linux][lin-link] |  [Coveralls][cov-link]  |
 | :---------------: | :-------------------: |
 | ![lin-badge]      | ![cov-badge]          |
 
 [lin-badge]: https://github.com/danielhstahl/black_scholes_rust/workflows/Rust/badge.svg
 [lin-link]: https://github.com/danielhstahl/black_scholes_rust/actions
 
-[cov-badge]: https://codecov.io/gh/danielhstahl/black_scholes_rust/branch/master/graph/badge.svg
-[cov-link]:  https://codecov.io/gh/danielhstahl/black_scholes_rust
+[cov-badge]: https://coveralls.io/repos/github/danielhstahl/black_scholes_rust/badge.svg?branch=master
+[cov-link]:  https://coveralls.io/repos/github/danielhstahl/black_scholes_rust
 
 
 # black_scholes_rust
