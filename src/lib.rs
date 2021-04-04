@@ -160,6 +160,19 @@ pub fn call_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     }
 }
 
+pub fn call_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    let sqrt_t = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_t * sigma;
+    if sqrt_maturity_sigma > 0.0 {
+        let discount = (-rate * maturity).exp();
+        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+
+        k * discount * maturity * cum_norm(d1 - sqrt_maturity_sigma)
+    } else {
+        0.0
+    }
+}
+
 /// Returns BS put option formula with discount and volatility already computed.
 ///
 /// # Examples
@@ -291,6 +304,20 @@ pub fn put_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
         0.0
     }
 }
+
+pub fn put_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    let sqrt_t = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_t * sigma;
+    if sqrt_maturity_sigma > 0.0 {
+        let discount = (-rate * maturity).exp();
+        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+
+        -1.0 * k * discount * maturity * cum_norm(-d1 + sqrt_maturity_sigma)
+    } else {
+        0.0
+    }
+}
+
 const SQRT_TWO_PI: f64 = 2.0 * std::f64::consts::SQRT_2 / std::f64::consts::FRAC_2_SQRT_PI;
 //Corrado and Miller (1996)
 fn approximate_vol(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> f64 {
@@ -413,12 +440,27 @@ mod tests {
     use approx::*;
     use rand::distributions::{Distribution, Uniform};
     use rand::{SeedableRng, StdRng};
+
     fn get_rng_seed(seed: [u8; 32]) -> StdRng {
         SeedableRng::from_seed(seed)
     }
+
     fn get_over_region(lower: f64, upper: f64, rand: f64) -> f64 {
         lower + (upper - lower) * rand
     }
+
+    macro_rules! assert_approx_eq {
+        ($a:expr, $b:expr) => {{
+            let (a, b) = (&$a, &$b);
+            assert!(
+                (*a - *b).abs() < 1.0e-6,
+                "{} is not approximately equal to {}",
+                *a,
+                *b
+            );
+        }};
+    }
+
     #[test]
     fn sqrt_two_pi_is_right() {
         assert_abs_diff_eq!(
@@ -429,7 +471,7 @@ mod tests {
     }
     #[test]
     fn call_formula_works() {
-        assert_eq!(call(5.0, 4.5, 0.05, 0.3, 1.0), 0.9848721043419868);
+        assert_approx_eq!(call(5.0, 4.5, 0.05, 0.3, 1.0), 0.9848721043419868);
     }
     #[test]
     fn call_formula_works_with_zero_vol() {
@@ -437,7 +479,7 @@ mod tests {
     }
     #[test]
     fn put_formula_works() {
-        assert_eq!(put(5.0, 4.5, 0.05, 0.3, 1.0), 0.2654045145951993);
+        assert_approx_eq!(put(5.0, 4.5, 0.05, 0.3, 1.0), 0.2654045145951993);
     }
     #[test]
     fn put_formula_works_with_zero_vol() {
@@ -525,5 +567,33 @@ mod tests {
         let rate = 0.0244;
         let maturity = 0.156;
         assert!(call_iv(price, s, k, rate, maturity).is_err());
+    }
+
+    #[test]
+    fn put_greeks_work() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = 0.09;
+        assert_approx_eq!(put_rho(s, k, rate, sigma, maturity), -11.996530249211213);
+        assert_approx_eq!(put_theta(s, k, rate, sigma, maturity), -102.28760152696525);
+        assert_approx_eq!(put_gamma(s, k, rate, sigma, maturity), 0.00492419827941365);
+        assert_approx_eq!(put_vega(s, k, rate, sigma, maturity), 49.761535877983086);
+        assert_approx_eq!(put_delta(s, k, rate, sigma, maturity), -0.22658184828282102);
+    }
+
+    #[test]
+    fn call_greeks_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = 0.09;
+        assert_approx_eq!(call_rho(s, k, rate, sigma, maturity), 33.90346975078879);
+        assert_approx_eq!(call_theta(s, k, rate, sigma, maturity), -102.28760152696525);
+        assert_approx_eq!(call_gamma(s, k, rate, sigma, maturity), 0.00492419827941365);
+        assert_approx_eq!(call_vega(s, k, rate, sigma, maturity), 49.761535877983086);
+        assert_approx_eq!(call_delta(s, k, rate, sigma, maturity), 0.773418151717179);
     }
 }
