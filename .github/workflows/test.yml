@@ -1,0 +1,42 @@
+name: RustTest
+
+on:
+  push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: hecrj/setup-rust-action@master
+      with:
+        rust-version: ${{ matrix.rust }}
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests stable
+      if: matrix.rust == 'stable'
+      run: cargo test --verbose
+    - name: Run tests nightly with coverage
+      if: matrix.rust == 'nightly' 
+      env:
+        CARGO_INCREMENTAL: 0
+        RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort
+        RUSTDOCFLAGS: -Cpanic=abort
+        CRATE_NAME: black_scholes
+      run: |
+        cargo build --verbose $CARGO_OPTIONS
+        cargo test --verbose $CARGO_OPTIONS
+        curl -L https://github.com/mozilla/grcov/releases/download/v0.7.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
+        zip -0 ccov.zip `find . \( -name "${CRATE_NAME}*.gc*" \) -print`
+        ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info
+    - name: Coveralls
+      if: matrix.rust == 'nightly' 
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: "lcov.info"
+    
