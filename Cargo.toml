@@ -16,11 +16,6 @@ nrfind = "1.0.2"
 [dev-dependencies]
 approx = "0.2.0"
 rand = "0.5"
-criterion = "0.2"
-
-[[bench]]
-name = "black_scholes_benches"
-harness = false
 
 [profile.bench]
 lto = true

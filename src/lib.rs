@@ -1,6 +1,9 @@
 //! # black_scholes
 //! A Black Scholes option pricing library.
 
+#![feature(test)]
+extern crate test;
+
 use special::Error;
 use std::f64::consts::{PI, SQRT_2};
 
@@ -437,13 +440,16 @@ pub fn put_iv(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> Result<f6
     put_iv_guess(price, s, k, rate, maturity, initial_guess)
 }
 
+
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::*;
     use rand::distributions::{Distribution, Uniform};
     use rand::{SeedableRng, StdRng};
-
+    use test::Bencher;
     fn get_rng_seed(seed: [u8; 32]) -> StdRng {
         SeedableRng::from_seed(seed)
     }
@@ -463,7 +469,15 @@ mod tests {
             );
         }};
     }
-
+    #[bench]
+    fn bench_call_price(b: &mut Bencher) {
+        let r = 0.05;
+        let sig = 0.3;
+        let t = 1.0;
+        let asset = 50.0;
+        let k = 50.0;
+        b.iter(|| call(asset, k, r, sig, t))
+    }
     #[test]
     fn sqrt_two_pi_is_right() {
         assert_abs_diff_eq!(
