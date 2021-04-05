@@ -43,17 +43,11 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: Benchmarks
-      uses: danielhstahl/gnuplot-action@master
-    - name: Deploy pages
-      uses: JamesIves/github-pages-deploy-action@4.1.0
+    - uses: hecrj/setup-rust-action@master
       with:
-        branch: gh-pages # The branch the action should deploy to.
-        folder: target/criterion # The folder the action should deploy.
-
-    - name: Run benchmark
-      run: cargo +nightly bench | tee output.txt
+        rust-version: nightly
+    - name: benchmark
+      run: cargo bench | tee output.txt
     - name: Store benchmark result
       uses: rhysd/github-action-benchmark@v1
       with:
