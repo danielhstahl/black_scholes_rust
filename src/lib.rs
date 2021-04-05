@@ -11,6 +11,10 @@ fn inc_norm(x: f64) -> f64 {
     (-x.powi(2) / 2.0).exp() / (PI.sqrt() * SQRT_2)
 }
 
+fn d1(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
+    (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma
+}
+
 /// Returns BS call option formula with discount and volatility already computed.
 ///
 /// # Examples
@@ -29,7 +33,7 @@ fn inc_norm(x: f64) -> f64 {
 /// ```
 pub fn call_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
     if sqrt_maturity_sigma > 0.0 {
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         s * cum_norm(d1) - k * discount * cum_norm(d1 - sqrt_maturity_sigma)
     } else {
         if s > k {
@@ -74,7 +78,7 @@ pub fn call_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = maturity.sqrt() * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         cum_norm(d1)
     } else {
         if s > k {
@@ -103,7 +107,7 @@ pub fn call_gamma(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = maturity.sqrt() * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         inc_norm(d1) / (s * sqrt_maturity_sigma)
     } else {
         0.0
@@ -127,7 +131,7 @@ pub fn call_vega(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = maturity.sqrt() * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         s * inc_norm(d1) * sqrt_maturity_sigma / sigma
     } else {
         0.0
@@ -152,7 +156,7 @@ pub fn call_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = sqrt_t * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         -s * inc_norm(d1) * sigma / (2.0 * sqrt_t)
             - rate * k * discount * cum_norm(d1 - sqrt_maturity_sigma)
     } else {
@@ -165,8 +169,7 @@ pub fn call_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = sqrt_t * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
-
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         k * discount * maturity * cum_norm(d1 - sqrt_maturity_sigma)
     } else {
         0.0
@@ -191,7 +194,7 @@ pub fn call_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 /// ```
 pub fn put_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
     if sqrt_maturity_sigma > 0.0 {
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         k * discount * cum_norm(sqrt_maturity_sigma - d1) - s * cum_norm(-d1)
     } else {
         if k > s {
@@ -236,7 +239,7 @@ pub fn put_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = maturity.sqrt() * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         return cum_norm(d1) - 1.0;
     } else {
         return if k > s { -1.0 } else { 0.0 };
@@ -297,7 +300,7 @@ pub fn put_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = sqrt_t * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         -s * inc_norm(d1) * sigma / (2.0 * sqrt_t)
             + rate * k * discount * cum_norm(-d1 + sqrt_maturity_sigma)
     } else {
@@ -310,7 +313,7 @@ pub fn put_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_maturity_sigma = sqrt_t * sigma;
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
-        let d1 = (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma;
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
 
         -1.0 * k * discount * maturity * cum_norm(-d1 + sqrt_maturity_sigma)
     } else {

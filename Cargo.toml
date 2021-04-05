@@ -2,8 +2,8 @@
 name = "black_scholes"
 version = "0.6.0"
 authors = ["Daniel Stahl <danstahl1138@gmail.com>"]
-homepage = "https://github.com/phillyfan1138/black_scholes_rust"
-repository = "https://github.com/phillyfan1138/black_scholes_rust"
+homepage = "https://github.com/danielhstahl/black_scholes_rust"
+repository = "https://github.com/danielhstahl/black_scholes_rust"
 readme = "README.md"
 license = "MIT"
 description = "A Black Scholes option pricing library."
@@ -12,9 +12,18 @@ edition = "2018"
 [dependencies]
 special = "0.7"
 nrfind = "1.0.2"
+
 [dev-dependencies]
 approx = "0.2.0"
 rand = "0.5"
+criterion = "0.2"
+
+[[bench]]
+name = "black_scholes_benches"
+harness = false
+
+[profile.bench]
+lto = true
 
 [badges]
-travis-ci = { repository = "phillyfan1138/black_scholes_rust" }
+travis-ci = { repository = "danielhstahl/black_scholes_rust" }
