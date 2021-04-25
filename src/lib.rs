@@ -1,14 +1,23 @@
 //! # black_scholes
 //! A Black Scholes option pricing library.
 
-use special::Error;
-use std::f64::consts::{PI, SQRT_2};
+use statrs::distribution::{Continuous, Normal, Univariate};
+
+//const normal: statrs::distribution::Normal = Normal::new(0.0, 1.0).unwrap();
 
 fn cum_norm(x: f64) -> f64 {
-    (x / SQRT_2).erf() * 0.5 + 0.5
+    Normal::new(0.0, 1.0).unwrap().cdf(x)
 }
+
+//fn cum_norm(x: f64) -> f64 {
+//    (x / SQRT_2).erf() * 0.5 + 0.5
+//}
+//fn inc_norm(x: f64) -> f64 {
+////    (-x.powi(2) / 2.0).exp() / (PI.sqrt() * SQRT_2)
+//}
+
 fn inc_norm(x: f64) -> f64 {
-    (-x.powi(2) / 2.0).exp() / (PI.sqrt() * SQRT_2)
+    Normal::new(0.0, 1.0).unwrap().pdf(x)
 }
 
 fn d1(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
@@ -54,7 +63,7 @@ pub fn call_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) ->
 /// let rate = 0.05;
 /// let sigma=0.3;
 /// let maturity=1.0;
-/// assert_eq!(0.9848721043419868, black_scholes::call(stock, strike, rate, sigma, maturity));
+/// assert_eq!(0.9848721043419872, black_scholes::call(stock, strike, rate, sigma, maturity));
 /// ```
 pub fn call(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     call_discount(s, k, (-rate * maturity).exp(), maturity.sqrt() * sigma)
@@ -215,7 +224,7 @@ pub fn put_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> 
 /// let rate = 0.05;
 /// let sigma = 0.3;
 /// let maturity = 1.0;
-/// assert_eq!(0.2654045145951993, black_scholes::put(stock, strike, rate, sigma, maturity));
+/// assert_eq!(0.26540451459519954, black_scholes::put(stock, strike, rate, sigma, maturity));
 /// ```
 pub fn put(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     put_discount(s, k, (-rate * maturity).exp(), maturity.sqrt() * sigma)
@@ -335,6 +344,7 @@ fn approximate_vol(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> f64 
     let bridge_m = if bridge_1 > 0.0 { bridge_1.sqrt() } else { 0.0 };
     coef * (c1 + bridge_m) / maturity.sqrt()
 }
+
 /// Returns implied volatility from a call option with initial guess
 ///
 /// # Examples
@@ -528,8 +538,11 @@ mod tests {
             let maturity = 0.7599;
             let price = call(s, k, rate, sigma, maturity);
             let initial_guess = approximate_vol(price, s, k, rate, maturity);
-            //println!("s: {}, k: {}, sigma: {}, price: {}, initial_guess: {}", s, k, sigma, price, initial_guess);
-            if price > 0.000001 {
+            println!(
+                "s: {}, k: {}, sigma: {}, price: {}, initial_guess: {}",
+                s, k, sigma, price, initial_guess
+            );
+            if price > 0.000001 && (s - k - price) > 0.000001 {
                 let _iv = call_iv_guess(price, s, k, rate, maturity, initial_guess).unwrap();
             }
         })
