@@ -475,6 +475,13 @@ mod tests {
         assert_approx_eq!(call(5.0, 4.5, 0.05, 0.3, 1.0), 0.9848721043419868);
     }
     #[test]
+    fn call_formula_works_close_maturity() {
+        assert_approx_eq!(
+            call(14341.0, 14000.0, 0.1, 0.2125, 0.25 / 365.0),
+            341.95898982726794
+        );
+    }
+    #[test]
     fn call_formula_works_with_zero_vol() {
         assert_eq!(call(5.0, 4.5, 0.05, 0.3, 0.0), 0.5);
     }
@@ -527,9 +534,10 @@ mod tests {
             let rate = 0.0247;
             let maturity = 0.7599;
             let price = call(s, k, rate, sigma, maturity);
+            let discount = (-rate * maturity).exp();
             let initial_guess = approximate_vol(price, s, k, rate, maturity);
-            //println!("s: {}, k: {}, sigma: {}, price: {}, initial_guess: {}", s, k, sigma, price, initial_guess);
-            if price > 0.000001 {
+            let cutoff = 0.000001;
+            if price > cutoff && s - k * discount - price > cutoff {
                 let _iv = call_iv_guess(price, s, k, rate, maturity, initial_guess).unwrap();
             }
         })
