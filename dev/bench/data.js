@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1617673274764,
+  "lastUpdate": 1619398942449,
   "repoUrl": "https://github.com/danielhstahl/black_scholes_rust",
   "entries": {
     "Benchmark": [
@@ -85,6 +85,36 @@ window.BENCHMARK_DATA = {
             "name": "bench_call_price",
             "value": 15,
             "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "danstahl1138@gmail.com",
+            "name": "Daniel Stahl",
+            "username": "danielhstahl"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9db87b9def23b0cb877ca0d7f583896a9fbb1400",
+          "message": "Merge pull request #10 from danielhstahl/feature/addtests\n\nadded tests",
+          "timestamp": "2021-04-25T20:00:53-05:00",
+          "tree_id": "55f9271b5643f6ff2b89917c8d8de03fbeaa1a67",
+          "url": "https://github.com/danielhstahl/black_scholes_rust/commit/9db87b9def23b0cb877ca0d7f583896a9fbb1400"
+        },
+        "date": 1619398941756,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "bench_call_price",
+            "value": 12,
+            "range": "± 1",
             "unit": "ns/iter"
           }
         ]
