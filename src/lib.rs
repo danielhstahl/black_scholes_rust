@@ -497,16 +497,16 @@ pub struct PricesAndGreeks {
 ///     stock,
 ///     strike,
 ///     rate,
+///     sigma,
 ///     maturity,
-///     sigma
 /// );
 /// ```
 pub fn compute_all(
     stock: f64,
     strike: f64,
     rate: f64,
-    maturity: f64,
     sigma: f64,
+    maturity: f64,
 ) -> PricesAndGreeks {
     let discount = (-rate * maturity).exp();
     let sqrt_maturity = maturity.sqrt();
@@ -753,7 +753,7 @@ mod tests {
             put_theta,
             put_vega,
             put_rho,
-        } = compute_all(s, k, rate, maturity, sigma);
+        } = compute_all(s, k, rate, sigma, maturity);
         assert_approx_eq!(call_price, call(s, k, rate, sigma, maturity));
         assert_approx_eq!(call_delta, 0.773418151717179);
         assert_approx_eq!(call_gamma, 0.00492419827941365);
@@ -776,7 +776,7 @@ mod tests {
         let k = 510.0;
         let rate = 0.05;
         let maturity = 0.09;
-        let result = compute_all(s, k, rate, maturity, sigma);
+        let result = compute_all(s, k, rate, sigma, maturity);
         assert_approx_eq!(result.call_price, call(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.call_delta, call_delta(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.call_gamma, call_gamma(s, k, rate, sigma, maturity));
