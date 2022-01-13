@@ -31,9 +31,10 @@ Import and use:
 extern crate black_scholes;
 let stock = 5.0;
 let strike = 4.5;
+let rate = 0.01;
 let discount = 0.99;
 let sigma = 0.3;
-let maturity:f64 = 2.0;
+let maturity = 2.0;
 let sqrt_maturity_sigma = sigma*maturity.sqrt();
 let price = black_scholes::call_discount(
     stock, strike, discount,
