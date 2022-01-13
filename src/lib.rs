@@ -1,6 +1,6 @@
 //! # black_scholes
 //! A Black Scholes option pricing library.
-
+use serde::Serialize;
 use special::Error;
 use std::f64::consts::{PI, SQRT_2};
 
@@ -13,6 +13,13 @@ fn inc_norm(x: f64) -> f64 {
 
 fn d1(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
     (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma
+}
+fn max_or_zero(v: f64) -> f64 {
+    if v > 0.0 {
+        v
+    } else {
+        0.0
+    }
 }
 
 /// Returns BS call option formula with discount and volatility already computed.
@@ -36,11 +43,7 @@ pub fn call_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) ->
         let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         s * cum_norm(d1) - k * discount * cum_norm(d1 - sqrt_maturity_sigma)
     } else {
-        if s > k {
-            s - k
-        } else {
-            0.0
-        }
+        max_or_zero(s - k)
     }
 }
 
@@ -164,6 +167,20 @@ pub fn call_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     }
 }
 
+/// Returns rho of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let theta = black_scholes::call_rho(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn call_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_t = maturity.sqrt();
     let sqrt_maturity_sigma = sqrt_t * sigma;
@@ -197,11 +214,7 @@ pub fn put_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> 
         let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         k * discount * cum_norm(sqrt_maturity_sigma - d1) - s * cum_norm(-d1)
     } else {
-        if k > s {
-            k - s
-        } else {
-            0.0
-        }
+        max_or_zero(k - s)
     }
 }
 
@@ -307,7 +320,20 @@ pub fn put_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
         0.0
     }
 }
-
+/// Returns rho of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let theta = black_scholes::put_rho(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
 pub fn put_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     let sqrt_t = maturity.sqrt();
     let sqrt_maturity_sigma = sqrt_t * sigma;
@@ -435,6 +461,108 @@ pub fn put_iv(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> Result<f6
     let c_price = price + s - k * (-rate * maturity).exp();
     let initial_guess = approximate_vol(c_price, s, k, rate, maturity);
     put_iv_guess(price, s, k, rate, maturity, initial_guess)
+}
+
+#[derive(Serialize)]
+pub struct PricesAndGreeks {
+    call_price: f64,
+    call_delta: f64,
+    call_gamma: f64,
+    call_theta: f64,
+    call_vega: f64,
+    call_rho: f64,
+    put_price: f64,
+    put_delta: f64,
+    put_gamma: f64,
+    put_theta: f64,
+    put_vega: f64,
+    put_rho: f64,
+}
+/// Returns call and put prices and greeks.
+/// Due to caching the complex computations
+/// (such as N(d1)), this implementation is
+/// faster if you need to obtain all the
+/// information for a given stock price
+/// and strike price.
+///
+/// # Examples
+///
+/// ```
+/// let sigma = 0.3;
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let maturity = 1.0;
+/// let all_prices_and_greeks = black_scholes::compute_all(
+///     stock,
+///     strike,
+///     rate,
+///     maturity,
+///     sigma
+/// );
+/// ```
+pub fn compute_all(
+    stock: f64,
+    strike: f64,
+    rate: f64,
+    maturity: f64,
+    sigma: f64,
+) -> PricesAndGreeks {
+    let discount = (-rate * maturity).exp();
+    let sqrt_maturity = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_maturity * sigma;
+    let k_discount = strike * discount;
+    if sqrt_maturity_sigma > 0.0 {
+        let d1 = d1(stock, strike, discount, sqrt_maturity_sigma);
+        let d2 = d1 - sqrt_maturity_sigma;
+        let cdf_d1 = cum_norm(d1);
+        let cdf_d2 = cum_norm(d2);
+        let pdf_d1 = inc_norm(d1);
+
+        let call_price = stock * cdf_d1 - k_discount * cdf_d2;
+        let call_delta = cdf_d1;
+        let call_gamma = pdf_d1 / (stock * sqrt_maturity_sigma);
+        let call_theta =
+            -stock * pdf_d1 * sigma / (2.0 * sqrt_maturity) - rate * k_discount * cdf_d2;
+        let call_vega = stock * pdf_d1 * sqrt_maturity_sigma / sigma;
+        let call_rho = k_discount * maturity * cdf_d2;
+        let put_price = call_price + k_discount - stock;
+        let put_delta = cdf_d1 - 1.0;
+        let put_gamma = call_gamma;
+        let put_theta =
+            -stock * pdf_d1 * sigma / (2.0 * sqrt_maturity) + rate * k_discount * (1.0 - cdf_d2);
+        let put_vega = call_vega;
+        let put_rho = -1.0 * k_discount * maturity * (1.0 - cdf_d2);
+        PricesAndGreeks {
+            call_price,
+            call_delta,
+            call_gamma,
+            call_theta,
+            call_vega,
+            call_rho,
+            put_price,
+            put_delta,
+            put_gamma,
+            put_theta,
+            put_vega,
+            put_rho,
+        }
+    } else {
+        PricesAndGreeks {
+            call_price: max_or_zero(stock - strike),
+            call_delta: if stock > strike { 1.0 } else { 0.0 },
+            call_gamma: 0.0,
+            call_theta: 0.0,
+            call_vega: 0.0,
+            call_rho: 0.0,
+            put_price: max_or_zero(strike - stock),
+            put_delta: if strike > stock { -1.0 } else { 0.0 },
+            put_gamma: 0.0,
+            put_theta: 0.0,
+            put_vega: 0.0,
+            put_rho: 0.0,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -604,5 +732,63 @@ mod tests {
         assert_approx_eq!(call_gamma(s, k, rate, sigma, maturity), 0.00492419827941365);
         assert_approx_eq!(call_vega(s, k, rate, sigma, maturity), 49.761535877983086);
         assert_approx_eq!(call_delta(s, k, rate, sigma, maturity), 0.773418151717179);
+    }
+    #[test]
+    fn compute_all_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = 0.09;
+        let PricesAndGreeks {
+            call_price,
+            call_delta,
+            call_gamma,
+            call_theta,
+            call_vega,
+            call_rho,
+            put_price,
+            put_delta,
+            put_gamma,
+            put_theta,
+            put_vega,
+            put_rho,
+        } = compute_all(s, k, rate, maturity, sigma);
+        assert_approx_eq!(call_price, call(s, k, rate, sigma, maturity));
+        assert_approx_eq!(call_delta, 0.773418151717179);
+        assert_approx_eq!(call_gamma, 0.00492419827941365);
+        assert_approx_eq!(call_theta, -102.28760152696525);
+        assert_approx_eq!(call_vega, 49.761535877983086);
+        assert_approx_eq!(call_rho, 33.90346975078879);
+
+        assert_approx_eq!(put_price, put(s, k, rate, sigma, maturity));
+        assert_approx_eq!(put_delta, -0.22658184828282102);
+        assert_approx_eq!(put_gamma, 0.00492419827941365);
+        assert_approx_eq!(put_theta, -102.28760152696525);
+        assert_approx_eq!(put_vega, 49.761535877983086);
+        assert_approx_eq!(put_rho, -11.996530249211213);
+    }
+
+    #[test]
+    fn compute_all_works_rate() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.05;
+        let maturity = 0.09;
+        let result = compute_all(s, k, rate, maturity, sigma);
+        assert_approx_eq!(result.call_price, call(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.call_delta, call_delta(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.call_gamma, call_gamma(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.call_theta, call_theta(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.call_vega, call_vega(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.call_rho, call_rho(s, k, rate, sigma, maturity));
+
+        assert_approx_eq!(result.put_price, put(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.put_delta, put_delta(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.put_gamma, put_gamma(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.put_theta, put_theta(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.put_vega, put_vega(s, k, rate, sigma, maturity));
+        assert_approx_eq!(result.put_rho, put_rho(s, k, rate, sigma, maturity));
     }
 }

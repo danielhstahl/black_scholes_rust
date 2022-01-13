@@ -1,6 +1,6 @@
 [package]
 name = "black_scholes"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Daniel Stahl <danstahl1138@gmail.com>"]
 homepage = "https://github.com/danielhstahl/black_scholes_rust"
 repository = "https://github.com/danielhstahl/black_scholes_rust"
@@ -12,6 +12,7 @@ edition = "2018"
 [dependencies]
 special = "0.7"
 nrfind = "1.0.2"
+serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 approx = "0.2.0"
