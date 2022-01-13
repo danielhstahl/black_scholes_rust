@@ -22,7 +22,7 @@ Put the following in your Cargo.toml:
 
 ```toml
 [dependencies]
-black_scholes = "0.6"
+black_scholes = "0.7"
 ```
 
 Import and use:
@@ -38,6 +38,11 @@ let sqrt_maturity_sigma = sigma*maturity.sqrt();
 let price = black_scholes::call_discount(
     stock, strike, discount,
     sqrt_maturity_sigma
+);
+//or 
+let price = black_scholes::call(
+    stock, strike, rate,
+    sigma, maturity
 );
 ```
 
