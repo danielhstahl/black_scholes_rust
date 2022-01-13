@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1619398942449,
+  "lastUpdate": 1642080662547,
   "repoUrl": "https://github.com/danielhstahl/black_scholes_rust",
   "entries": {
     "Benchmark": [
@@ -115,6 +115,36 @@ window.BENCHMARK_DATA = {
             "name": "bench_call_price",
             "value": 12,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "danstahl1138@gmail.com",
+            "name": "Daniel Stahl",
+            "username": "danielhstahl"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5ef434fae9bd29740637ea41a2985938b194cffa",
+          "message": "Merge pull request #11 from danielhstahl/feature/enhance_api\n\nadded cached version for efficient computation of all greeks and pric…",
+          "timestamp": "2022-01-13T07:29:22-06:00",
+          "tree_id": "74e8db594554eac64b61c2787f476c547b8e9cc2",
+          "url": "https://github.com/danielhstahl/black_scholes_rust/commit/5ef434fae9bd29740637ea41a2985938b194cffa"
+        },
+        "date": 1642080661394,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "bench_call_price",
+            "value": 12,
+            "range": "± 2",
             "unit": "ns/iter"
           }
         ]
