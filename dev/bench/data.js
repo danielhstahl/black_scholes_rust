@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1642088104406,
+  "lastUpdate": 1642088183129,
   "repoUrl": "https://github.com/danielhstahl/black_scholes_rust",
   "entries": {
     "Benchmark": [
@@ -187,6 +187,48 @@ window.BENCHMARK_DATA = {
             "name": "bench_call_price",
             "value": 15,
             "range": "± 0",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "danstahl1138@gmail.com",
+            "name": "Daniel Stahl",
+            "username": "danielhstahl"
+          },
+          "committer": {
+            "email": "danstahl1138@gmail.com",
+            "name": "Daniel Stahl",
+            "username": "danielhstahl"
+          },
+          "distinct": true,
+          "id": "e168e58901061201ec4297581163ad08ebcf116f",
+          "message": "updated readme",
+          "timestamp": "2022-01-13T09:34:44-06:00",
+          "tree_id": "ccd802cf12bd9d4eb71e69e8d660656728b2f2ca",
+          "url": "https://github.com/danielhstahl/black_scholes_rust/commit/e168e58901061201ec4297581163ad08ebcf116f"
+        },
+        "date": 1642088182800,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "bench_all_price",
+            "value": 15,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bench_all_price_no_cache",
+            "value": 286,
+            "range": "± 44",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bench_call_price",
+            "value": 12,
+            "range": "± 1",
             "unit": "ns/iter"
           }
         ]
