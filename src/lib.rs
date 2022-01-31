@@ -565,6 +565,61 @@ pub fn compute_all(
     }
 }
 
+extern "C" {
+    /// Calculates the IV based on www.jaeckel.org. 
+    /// 
+    /// Price is the adjusted_price of an option which can be calculated as
+    /// `let adjusted_price = ot_price / std::f64::consts::E.powf(-risk_free_rate * maturity);`
+    /// where ot_price is the price of the option.
+    /// 
+    /// `F` is the forward_price of the underlying:
+    /// `let forward_price = underlying_price / (-risk_free_rate * maturity).exp();
+    /// 
+    /// `K` is the strike. 
+    /// `T` is the maturity.
+    /// `q` is 1 for call, -1 for put
+    /// `N` is the number of iterations that should be attempted as maximum before stopping. 
+    pub fn implied_volatility_from_a_transformed_rational_guess_with_limited_iterations(
+        price: f64,
+        F: f64,
+        K: f64,
+        T: f64,
+        q: f64, /* q=±1 */
+        N: i64,
+    ) -> f64;
+}
+
+pub fn iv_jaeckel(
+    ot_price: f64,
+    underlying_price: f64,
+    strike: f64,
+    maturity: f64,
+    risk_free_rate: f64,
+    flag: f64,
+) -> Result<f64, String> {
+    let adjusted_price = ot_price / std::f64::consts::E.powf(-risk_free_rate * maturity);
+    let forward_price = underlying_price / (-risk_free_rate * maturity).exp();
+
+    let res;
+
+    unsafe {
+        res = implied_volatility_from_a_transformed_rational_guess_with_limited_iterations(
+            adjusted_price,
+            forward_price,
+            strike,
+            maturity,
+            flag,
+            10000,
+        );
+    }
+
+    if res.is_nan() || res.is_infinite() {
+        return Err("Failed to get iv as it is either NaN or infinite".to_string());
+    }
+
+    Ok(res)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -790,5 +845,26 @@ mod tests {
         assert_approx_eq!(result.put_theta, put_theta(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_vega, put_vega(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_rho, put_rho(s, k, rate, sigma, maturity));
+    }
+
+    #[test]
+    pub fn external_iv_calculation_works() {
+        let ot_price = 6.78242400926;
+        let underlying_price = 100.0;
+        let strike = 100.0;
+        let maturity = 0.5;
+        let risk_free_rate = 0.01;
+        let res = iv_jaeckel(
+            ot_price,
+            underlying_price,
+            strike,
+            maturity,
+            risk_free_rate,
+            -1.0,
+        )
+        .unwrap();
+
+        println!("{}", res);
+        assert!((res - 0.250120050200933).abs() < 0.00001);
     }
 }

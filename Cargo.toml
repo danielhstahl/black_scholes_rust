@@ -14,6 +14,9 @@ special = "0.7"
 nrfind = "1.0.2"
 serde = { version = "1.0", features = ["derive"] }
 
+[build-dependencies]
+cc = "1.0"
+
 [dev-dependencies]
 approx = "0.2.0"
 rand = "0.5"
