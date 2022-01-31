@@ -1,7 +1,6 @@
 name: RustTest
 
-on:
-  push
+on: [push, pull request]
 
 jobs:
   build:
