@@ -25,24 +25,3 @@ jobs:
       run: cargo doc
     - name: Publish
       run: cargo publish --token ${{ secrets.CARGO_TOKEN }} --allow-dirty || true
-
-  bench:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: hecrj/setup-rust-action@master
-      with:
-        rust-version: nightly
-    - name: benchmark
-      run: cargo bench | tee output.txt
-    - name: Store benchmark result
-      uses: rhysd/github-action-benchmark@v1
-      with:
-        tool: 'cargo'
-        output-file-path: output.txt
-        github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-        auto-push: true
-        # Show alert with commit comment on detecting possible performance regression
-        alert-threshold: '200%'
-        comment-on-alert: true
-        fail-on-alert: true
