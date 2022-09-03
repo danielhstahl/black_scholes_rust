@@ -5,7 +5,7 @@ use special::Error;
 use std::f64::consts::{PI, SQRT_2};
 
 fn cum_norm(x: f64) -> f64 {
-    (x / SQRT_2).erf() * 0.5 + 0.5
+    (x / SQRT_2).error() * 0.5 + 0.5
 }
 fn inc_norm(x: f64) -> f64 {
     (-x.powi(2) / 2.0).exp() / (PI.sqrt() * SQRT_2)
@@ -83,14 +83,13 @@ pub fn call_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
         let discount = (-rate * maturity).exp();
         let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         cum_norm(d1)
-    } else {
-        if s > k {
+    } else if s > k {
             1.0
         } else {
             0.0
         }
     }
-}
+
 
 /// Returns gamma of a BS call option
 ///
@@ -253,11 +252,15 @@ pub fn put_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     if sqrt_maturity_sigma > 0.0 {
         let discount = (-rate * maturity).exp();
         let d1 = d1(s, k, discount, sqrt_maturity_sigma);
-        return cum_norm(d1) - 1.0;
-    } else {
-        return if k > s { -1.0 } else { 0.0 };
+        cum_norm(d1) - 1.0
+    } else if k > s {
+            -1.0 
+        } 
+    else {
+            0.0 
+        }
     }
-}
+
 /// Returns gamma of a BS put option
 ///
 /// # Examples
@@ -570,7 +573,8 @@ mod tests {
     use super::*;
     use approx::*;
     use rand::distributions::{Distribution, Uniform};
-    use rand::{SeedableRng, StdRng};
+    use rand::{SeedableRng};
+    use rand::rngs::StdRng;
     fn get_rng_seed(seed: [u8; 32]) -> StdRng {
         SeedableRng::from_seed(seed)
     }
