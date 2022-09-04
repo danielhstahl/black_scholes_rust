@@ -22,7 +22,7 @@ Put the following in your Cargo.toml:
 
 ```toml
 [dependencies]
-black_scholes = "0.7"
+black_scholes = "0.8"
 ```
 
 Import and use:
