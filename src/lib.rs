@@ -466,20 +466,20 @@ pub fn put_iv(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> Result<f6
     put_iv_guess(price, s, k, rate, maturity, initial_guess)
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct PricesAndGreeks {
-    call_price: f64,
-    call_delta: f64,
-    call_gamma: f64,
-    call_theta: f64,
-    call_vega: f64,
-    call_rho: f64,
-    put_price: f64,
-    put_delta: f64,
-    put_gamma: f64,
-    put_theta: f64,
-    put_vega: f64,
-    put_rho: f64,
+    pub call_price: f64,
+    pub call_delta: f64,
+    pub call_gamma: f64,
+    pub call_theta: f64,
+    pub call_vega: f64,
+    pub call_rho: f64,
+    pub put_price: f64,
+    pub put_delta: f64,
+    pub put_gamma: f64,
+    pub put_theta: f64,
+    pub put_vega: f64,
+    pub put_rho: f64,
 }
 /// Returns call and put prices and greeks.
 /// Due to caching the complex computations
