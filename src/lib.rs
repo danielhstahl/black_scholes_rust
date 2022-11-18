@@ -57,7 +57,7 @@ pub fn call_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) ->
 /// let rate = 0.05;
 /// let sigma=0.3;
 /// let maturity=1.0;
-/// assert_eq!(0.9848721043419868, black_scholes::call(stock, strike, rate, sigma, maturity));
+/// let call=black_scholes::call(stock, strike, rate, sigma, maturity);
 /// ```
 pub fn call(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     call_discount(s, k, (-rate * maturity).exp(), maturity.sqrt() * sigma)
@@ -84,12 +84,11 @@ pub fn call_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
         let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         cum_norm(d1)
     } else if s > k {
-            1.0
-        } else {
-            0.0
-        }
+        1.0
+    } else {
+        0.0
     }
-
+}
 
 /// Returns gamma of a BS call option
 ///
@@ -227,7 +226,7 @@ pub fn put_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> 
 /// let rate = 0.05;
 /// let sigma = 0.3;
 /// let maturity = 1.0;
-/// assert_eq!(0.2654045145951993, black_scholes::put(stock, strike, rate, sigma, maturity));
+/// let put=black_scholes::put(stock, strike, rate, sigma, maturity);
 /// ```
 pub fn put(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     put_discount(s, k, (-rate * maturity).exp(), maturity.sqrt() * sigma)
@@ -254,12 +253,11 @@ pub fn put_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
         let d1 = d1(s, k, discount, sqrt_maturity_sigma);
         cum_norm(d1) - 1.0
     } else if k > s {
-            -1.0 
-        } 
-    else {
-            0.0 
-        }
+        -1.0
+    } else {
+        0.0
     }
+}
 
 /// Returns gamma of a BS put option
 ///
@@ -348,6 +346,139 @@ pub fn put_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     } else {
         0.0
     }
+}
+
+/// Returns vanna of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let vanna = black_scholes::call_vanna(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
+pub fn call_vanna(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    let sqrt_t = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_t * sigma;
+    if sqrt_maturity_sigma > 0.0 {
+        let discount = (-rate * maturity).exp();
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
+        -inc_norm(d1) * (d1 - sqrt_maturity_sigma) / sigma
+    } else {
+        0.0
+    }
+}
+/// Returns vanna of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let vanna = black_scholes::put_vanna(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
+pub fn put_vanna(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    call_vanna(s, k, rate, sigma, maturity)
+}
+/// Returns vomma of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let vomma = black_scholes::call_vomma(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
+pub fn call_vomma(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    let sqrt_t = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_t * sigma;
+    if sqrt_maturity_sigma > 0.0 {
+        let discount = (-rate * maturity).exp();
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
+        let d2 = d1 - sqrt_maturity_sigma;
+        s * inc_norm(d1) * d1 * d2 * maturity / (sqrt_maturity_sigma)
+    } else {
+        0.0
+    }
+}
+
+/// Returns vomma of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let vomma = black_scholes::put_vomma(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
+pub fn put_vomma(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    call_vomma(s, k, rate, sigma, maturity)
+}
+
+/// Returns charm of a BS call option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let charm = black_scholes::call_charm(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
+pub fn call_charm(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    let sqrt_t = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_t * sigma;
+    if sqrt_maturity_sigma > 0.0 {
+        let discount = (-rate * maturity).exp();
+        let d1 = d1(s, k, discount, sqrt_maturity_sigma);
+        let d2 = d1 - sqrt_maturity_sigma;
+        -inc_norm(d1) * (2.0 * rate * maturity - d2 * sqrt_maturity_sigma)
+            / (2.0 * maturity * sqrt_maturity_sigma)
+    } else {
+        0.0 //check that this is true....
+    }
+}
+
+/// Returns charm of a BS put option
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let rate = 0.05;
+/// let sigma=0.3;
+/// let maturity=1.0;
+/// let charm = black_scholes::put_charm(
+///     stock, strike, rate, sigma, maturity
+/// );
+/// ```
+pub fn put_charm(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
+    call_charm(s, k, rate, sigma, maturity)
 }
 
 const SQRT_TWO_PI: f64 = 2.0 * std::f64::consts::SQRT_2 / std::f64::consts::FRAC_2_SQRT_PI;
@@ -474,12 +605,18 @@ pub struct PricesAndGreeks {
     pub call_theta: f64,
     pub call_vega: f64,
     pub call_rho: f64,
+    pub call_vanna: f64,
+    pub call_vomma: f64,
+    pub call_charm: f64,
     pub put_price: f64,
     pub put_delta: f64,
     pub put_gamma: f64,
     pub put_theta: f64,
     pub put_vega: f64,
     pub put_rho: f64,
+    pub put_vanna: f64,
+    pub put_vomma: f64,
+    pub put_charm: f64,
 }
 /// Returns call and put prices and greeks.
 /// Due to caching the complex computations
@@ -529,6 +666,10 @@ pub fn compute_all(
             -stock * pdf_d1 * sigma / (2.0 * sqrt_maturity) - rate * k_discount * cdf_d2;
         let call_vega = stock * pdf_d1 * sqrt_maturity_sigma / sigma;
         let call_rho = k_discount * maturity * cdf_d2;
+        let call_vanna = call_vega / stock * (1.0 - d1 / sqrt_maturity_sigma);
+        let call_vomma = call_vega * d1 * d2 / sigma;
+        let call_charm = -pdf_d1 * (2.0 * rate * maturity - d2 * sqrt_maturity_sigma)
+            / (2.0 * maturity * sqrt_maturity_sigma);
         let put_price = call_price + k_discount - stock;
         let put_delta = cdf_d1 - 1.0;
         let put_gamma = call_gamma;
@@ -536,6 +677,9 @@ pub fn compute_all(
             -stock * pdf_d1 * sigma / (2.0 * sqrt_maturity) + rate * k_discount * (1.0 - cdf_d2);
         let put_vega = call_vega;
         let put_rho = -1.0 * k_discount * maturity * (1.0 - cdf_d2);
+        let put_vanna = call_vanna;
+        let put_vomma = call_vomma;
+        let put_charm = call_charm;
         PricesAndGreeks {
             call_price,
             call_delta,
@@ -543,12 +687,18 @@ pub fn compute_all(
             call_theta,
             call_vega,
             call_rho,
+            call_vanna,
+            call_vomma,
+            call_charm,
             put_price,
             put_delta,
             put_gamma,
             put_theta,
             put_vega,
             put_rho,
+            put_vanna,
+            put_vomma,
+            put_charm,
         }
     } else {
         PricesAndGreeks {
@@ -558,12 +708,18 @@ pub fn compute_all(
             call_theta: 0.0,
             call_vega: 0.0,
             call_rho: 0.0,
+            call_vanna: 0.0,
+            call_vomma: 0.0,
+            call_charm: 0.0,
             put_price: max_or_zero(strike - stock),
             put_delta: if strike > stock { -1.0 } else { 0.0 },
             put_gamma: 0.0,
             put_theta: 0.0,
             put_vega: 0.0,
             put_rho: 0.0,
+            put_vanna: 0.0,
+            put_vomma: 0.0,
+            put_charm: 0.0,
         }
     }
 }
@@ -573,8 +729,8 @@ mod tests {
     use super::*;
     use approx::*;
     use rand::distributions::{Distribution, Uniform};
-    use rand::{SeedableRng};
     use rand::rngs::StdRng;
+    use rand::SeedableRng;
     fn get_rng_seed(seed: [u8; 32]) -> StdRng {
         SeedableRng::from_seed(seed)
     }
@@ -737,6 +893,92 @@ mod tests {
         assert_approx_eq!(call_vega(s, k, rate, sigma, maturity), 49.761535877983086);
         assert_approx_eq!(call_delta(s, k, rate, sigma, maturity), 0.773418151717179);
     }
+
+    #[test]
+    fn put_greeks_work_2() {
+        let s = 150.0;
+        let sigma = 0.37;
+        let k = 160.0;
+        let rate = 0.03;
+        let maturity = 0.08;
+        assert_abs_diff_eq!(
+            put_delta(s, k, rate, sigma, maturity),
+            -0.71,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            put_theta(s, k, rate, sigma, maturity),
+            -30.26,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(put_vega(s, k, rate, sigma, maturity), 14.62, epsilon = 0.01);
+        assert_abs_diff_eq!(put_rho(s, k, rate, sigma, maturity), -9.46, epsilon = 0.01);
+        assert_abs_diff_eq!(
+            put_gamma(s, k, rate, sigma, maturity),
+            0.022,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            put_vanna(s, k, rate, sigma, maturity),
+            0.602,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            put_charm(s, k, rate, sigma, maturity),
+            -1.490,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            put_vomma(s, k, rate, sigma, maturity),
+            13.821,
+            epsilon = 0.01
+        );
+    }
+
+    #[test]
+    fn call_greeks_works_2() {
+        let s = 150.0;
+        let sigma = 0.37;
+        let k = 160.0;
+        let rate = 0.03;
+        let maturity = 0.08;
+        assert_abs_diff_eq!(
+            call_delta(s, k, rate, sigma, maturity),
+            0.29,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            call_theta(s, k, rate, sigma, maturity),
+            -35.04,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            call_vega(s, k, rate, sigma, maturity),
+            14.62,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(call_rho(s, k, rate, sigma, maturity), 3.31, epsilon = 0.01);
+        assert_abs_diff_eq!(
+            call_gamma(s, k, rate, sigma, maturity),
+            0.022,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            call_vanna(s, k, rate, sigma, maturity),
+            0.602,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            call_charm(s, k, rate, sigma, maturity),
+            -1.490,
+            epsilon = 0.01
+        );
+        assert_abs_diff_eq!(
+            call_vomma(s, k, rate, sigma, maturity),
+            13.821,
+            epsilon = 0.01
+        );
+    }
     #[test]
     fn compute_all_works() {
         let s = 550.88;
@@ -751,12 +993,16 @@ mod tests {
             call_theta,
             call_vega,
             call_rho,
+            call_vanna: call_vanna_result,
+            call_vomma: call_vomma_result,
+            call_charm: call_charm_result,
             put_price,
             put_delta,
             put_gamma,
             put_theta,
             put_vega,
             put_rho,
+            ..
         } = compute_all(s, k, rate, sigma, maturity);
         assert_approx_eq!(call_price, call(s, k, rate, sigma, maturity));
         assert_approx_eq!(call_delta, 0.773418151717179);
@@ -771,6 +1017,10 @@ mod tests {
         assert_approx_eq!(put_theta, -102.28760152696525);
         assert_approx_eq!(put_vega, 49.761535877983086);
         assert_approx_eq!(put_rho, -11.996530249211213);
+
+        assert_approx_eq!(call_vanna_result, call_vanna(s, k, rate, sigma, maturity));
+        assert_approx_eq!(call_vomma_result, call_vomma(s, k, rate, sigma, maturity));
+        assert_approx_eq!(call_charm_result, call_charm(s, k, rate, sigma, maturity));
     }
 
     #[test]
