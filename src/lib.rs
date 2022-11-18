@@ -474,12 +474,16 @@ pub struct PricesAndGreeks {
     pub call_theta: f64,
     pub call_vega: f64,
     pub call_rho: f64,
+    pub call_vanna: f64,
+    pub call_charm: f64,
     pub put_price: f64,
     pub put_delta: f64,
     pub put_gamma: f64,
     pub put_theta: f64,
     pub put_vega: f64,
     pub put_rho: f64,
+    pub put_vanna: f64,
+    pub put_charm: f64,
 }
 /// Returns call and put prices and greeks.
 /// Due to caching the complex computations
@@ -529,6 +533,8 @@ pub fn compute_all(
             -stock * pdf_d1 * sigma / (2.0 * sqrt_maturity) - rate * k_discount * cdf_d2;
         let call_vega = stock * pdf_d1 * sqrt_maturity_sigma / sigma;
         let call_rho = k_discount * maturity * cdf_d2;
+        let call_charm = 0.0;
+        let call_vanna = 0.0;
         let put_price = call_price + k_discount - stock;
         let put_delta = cdf_d1 - 1.0;
         let put_gamma = call_gamma;
@@ -536,6 +542,8 @@ pub fn compute_all(
             -stock * pdf_d1 * sigma / (2.0 * sqrt_maturity) + rate * k_discount * (1.0 - cdf_d2);
         let put_vega = call_vega;
         let put_rho = -1.0 * k_discount * maturity * (1.0 - cdf_d2);
+        let put_charm = 0.0;
+        let put_vanna = 0.0;
         PricesAndGreeks {
             call_price,
             call_delta,
@@ -543,12 +551,16 @@ pub fn compute_all(
             call_theta,
             call_vega,
             call_rho,
+            call_charm,
+            call_vanna,
             put_price,
             put_delta,
             put_gamma,
             put_theta,
             put_vega,
             put_rho,
+            put_charm,
+            put_vanna
         }
     } else {
         PricesAndGreeks {
@@ -558,12 +570,16 @@ pub fn compute_all(
             call_theta: 0.0,
             call_vega: 0.0,
             call_rho: 0.0,
+            call_charm: 0.0,
+            call_vanna: 0.0,
             put_price: max_or_zero(strike - stock),
             put_delta: if strike > stock { -1.0 } else { 0.0 },
             put_gamma: 0.0,
             put_theta: 0.0,
             put_vega: 0.0,
             put_rho: 0.0,
+            put_charm: 0.0,
+            put_vanna: 0.0
         }
     }
 }
