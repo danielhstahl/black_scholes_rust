@@ -476,6 +476,7 @@ pub struct PricesAndGreeks {
     pub call_rho: f64,
     pub call_vanna: f64,
     pub call_charm: f64,
+    pub call_vomma: f64,
     pub put_price: f64,
     pub put_delta: f64,
     pub put_gamma: f64,
@@ -484,6 +485,7 @@ pub struct PricesAndGreeks {
     pub put_rho: f64,
     pub put_vanna: f64,
     pub put_charm: f64,
+    pub put_vomma: f64,
 }
 /// Returns call and put prices and greeks.
 /// Due to caching the complex computations
@@ -535,6 +537,7 @@ pub fn compute_all(
         let call_rho = k_discount * maturity * cdf_d2;
         let call_charm = 0.0;
         let call_vanna = 0.0;
+        let call_vomma = 0.0;
         let put_price = call_price + k_discount - stock;
         let put_delta = cdf_d1 - 1.0;
         let put_gamma = call_gamma;
@@ -544,6 +547,7 @@ pub fn compute_all(
         let put_rho = -1.0 * k_discount * maturity * (1.0 - cdf_d2);
         let put_charm = 0.0;
         let put_vanna = 0.0;
+        let put_vomma = 0.0;
         PricesAndGreeks {
             call_price,
             call_delta,
@@ -553,6 +557,7 @@ pub fn compute_all(
             call_rho,
             call_charm,
             call_vanna,
+            call_vomma,
             put_price,
             put_delta,
             put_gamma,
@@ -560,7 +565,8 @@ pub fn compute_all(
             put_vega,
             put_rho,
             put_charm,
-            put_vanna
+            put_vanna,
+            put_vomma
         }
     } else {
         PricesAndGreeks {
@@ -572,6 +578,7 @@ pub fn compute_all(
             call_rho: 0.0,
             call_charm: 0.0,
             call_vanna: 0.0,
+            call_vomma: 0.0,
             put_price: max_or_zero(strike - stock),
             put_delta: if strike > stock { -1.0 } else { 0.0 },
             put_gamma: 0.0,
@@ -579,7 +586,8 @@ pub fn compute_all(
             put_vega: 0.0,
             put_rho: 0.0,
             put_charm: 0.0,
-            put_vanna: 0.0
+            put_vanna: 0.0,
+            put_vomma: 0.0
         }
     }
 }
