@@ -1,6 +1,6 @@
 [package]
 name = "black_scholes"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["Daniel Stahl <danstahl1138@gmail.com>"]
 homepage = "https://github.com/danielhstahl/black_scholes_rust"
 repository = "https://github.com/danielhstahl/black_scholes_rust"
@@ -10,7 +10,7 @@ description = "A Black Scholes option pricing library."
 edition = "2021"
 
 [dependencies]
-special = "0.8"
+special = "0.10.2"
 nrfind = "1.0.3"
 serde = { version = "1.0", features = ["derive"] }
 
