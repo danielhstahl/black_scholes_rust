@@ -41,14 +41,17 @@ jobs:
 
   multiple_targets:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [wasm32-unknown-unknown, x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
     steps:
     - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@master
       with:
         rust-version: stable
-        targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,x86_64-unknown-linux-musl
+        targets: ${{ matrix.target }}
     - name: Build
-      run: cargo build --verbose 
+      run: cargo build --target=${{ matrix.target }}
 
   bench:
     runs-on: ubuntu-latest
