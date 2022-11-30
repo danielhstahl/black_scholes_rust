@@ -2,7 +2,7 @@
 //! A Black Scholes option pricing library.
 use serde::Serialize;
 use special::Error;
-use std::f64::consts::{PI, SQRT_2};
+use std::f64::consts::{FRAC_2_SQRT_PI, PI, SQRT_2};
 
 fn cum_norm(x: f64) -> f64 {
     (x / SQRT_2).error() * 0.5 + 0.5
@@ -481,7 +481,7 @@ pub fn put_charm(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     call_charm(s, k, rate, sigma, maturity)
 }
 
-const SQRT_TWO_PI: f64 = 2.0 * std::f64::consts::SQRT_2 / std::f64::consts::FRAC_2_SQRT_PI;
+const SQRT_TWO_PI: f64 = 2.0 * SQRT_2 / FRAC_2_SQRT_PI;
 //Corrado and Miller (1996)
 fn approximate_vol(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> f64 {
     let discount = (-rate * maturity).exp();
@@ -490,7 +490,7 @@ fn approximate_vol(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> f64 
     let helper_1 = s - x;
     let c1 = price - helper_1 * 0.5;
     let c2 = c1.powi(2);
-    let c3 = helper_1.powi(2) / std::f64::consts::PI;
+    let c3 = helper_1.powi(2) / PI;
     let bridge_1 = c2 - c3;
     let bridge_m = if bridge_1 > 0.0 { bridge_1.sqrt() } else { 0.0 };
     coef * (c1 + bridge_m) / maturity.sqrt()
@@ -752,11 +752,7 @@ mod tests {
     }
     #[test]
     fn sqrt_two_pi_is_right() {
-        assert_abs_diff_eq!(
-            SQRT_TWO_PI,
-            (2.0 * std::f64::consts::PI).sqrt(),
-            epsilon = 0.000000001
-        );
+        assert_abs_diff_eq!(SQRT_TWO_PI, (2.0 * PI).sqrt(), epsilon = 0.000000001);
     }
     #[test]
     fn call_formula_works() {
@@ -805,7 +801,6 @@ mod tests {
         let maturity = 1.0;
         let price = call(s, k, rate, sigma, maturity);
         let approx_vol = approximate_vol(price, s, k, rate, maturity);
-        println!("approx: {}", approx_vol);
         assert_abs_diff_eq!(sigma, approx_vol, epsilon = 0.01);
     }
     #[test]
@@ -838,13 +833,11 @@ mod tests {
         let rate = 0.0247;
         let maturity = 0.7599;
         let price = call(s, k, rate, sigma, maturity);
-        println!("s: {}, k: {}, sigma: {}, price: {}", s, k, sigma, price);
         let _iv = call_iv(price, s, k, rate, maturity).unwrap();
     }
     #[test]
     fn put_iv_works() {
         let sigma = 0.2;
-        //let initial_guess=0.195;
         let s = 5.0;
         let k = 4.5;
         let rate = 0.05;

@@ -10,7 +10,7 @@ jobs:
         rust: [stable, nightly]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@master
       with:
         rust-version: ${{ matrix.rust }}
@@ -38,11 +38,22 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         path-to-lcov: "lcov.info"
-    
+
+  multiple_targets:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: hecrj/setup-rust-action@master
+      with:
+        rust-version: stable
+        targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,x86_64-unknown-linux-musl
+    - name: Build
+      run: cargo build --verbose 
+
   bench:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@master
       with:
         rust-version: nightly
