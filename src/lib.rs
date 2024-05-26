@@ -2,24 +2,27 @@
 //! A Black Scholes option pricing library.
 use serde::Serialize;
 use special::Error;
-use std::f64::consts::{FRAC_2_SQRT_PI, PI, SQRT_2};
+use std::f64::consts::{FRAC_1_PI, FRAC_1_SQRT_2, FRAC_2_SQRT_PI, SQRT_2};
+
+/// 1/sqrt(2π)
+#[allow(clippy::excessive_precision)]
+const FRAC_1_SQRT_2PI: f64 = 0.3989422804014326779399460599343818684758586311649346576659258296;
 
 fn cum_norm(x: f64) -> f64 {
-    (x / SQRT_2).error() * 0.5 + 0.5
+    (x * FRAC_1_SQRT_2).error() * 0.5 + 0.5
 }
+
 fn inc_norm(x: f64) -> f64 {
-    (-x.powi(2) / 2.0).exp() / (PI.sqrt() * SQRT_2)
+    (-x.powi(2) * 0.5).exp() * FRAC_1_SQRT_2PI
 }
 
 fn d1(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
     (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma
 }
+
+#[inline(always)]
 fn max_or_zero(v: f64) -> f64 {
-    if v > 0.0 {
-        v
-    } else {
-        0.0
-    }
+    v.max(0.0)
 }
 
 /// Returns BS call option formula with discount and volatility already computed.
@@ -490,9 +493,9 @@ fn approximate_vol(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> f64 
     let helper_1 = s - x;
     let c1 = price - helper_1 * 0.5;
     let c2 = c1.powi(2);
-    let c3 = helper_1.powi(2) / PI;
+    let c3 = helper_1.powi(2) * FRAC_1_PI;
     let bridge_1 = c2 - c3;
-    let bridge_m = if bridge_1 > 0.0 { bridge_1.sqrt() } else { 0.0 };
+    let bridge_m = bridge_1.max(0.0).sqrt();
     coef * (c1 + bridge_m) / maturity.sqrt()
 }
 /// Returns implied volatility from a call option with initial guess
@@ -731,6 +734,8 @@ mod tests {
     use rand::distributions::{Distribution, Uniform};
     use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use std::f64::consts::PI;
+
     fn get_rng_seed(seed: [u8; 32]) -> StdRng {
         SeedableRng::from_seed(seed)
     }
@@ -1037,5 +1042,10 @@ mod tests {
         assert_approx_eq!(result.put_theta, put_theta(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_vega, put_vega(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_rho, put_rho(s, k, rate, sigma, maturity));
+    }
+
+    #[test]
+    fn constants_are_correct() {
+        assert_approx_eq!(FRAC_1_SQRT_2PI, (2.0 * PI).sqrt().recip());
     }
 }
