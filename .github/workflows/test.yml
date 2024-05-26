@@ -55,6 +55,9 @@ jobs:
 
   bench:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
     - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@master
@@ -63,7 +66,7 @@ jobs:
     - name: benchmark
       run: cargo bench | tee output.txt
     - name: Store benchmark result
-      uses: rhysd/github-action-benchmark@v1
+      uses: benchmark-action/github-action-benchmark@v1
       with:
         tool: 'cargo'
         output-file-path: output.txt
