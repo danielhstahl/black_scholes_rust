@@ -495,7 +495,7 @@ fn approximate_vol(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> f64 
     let c2 = c1.powi(2);
     let c3 = helper_1.powi(2) * FRAC_1_PI;
     let bridge_1 = c2 - c3;
-    let bridge_m = if bridge_1 > 0.0 { bridge_1.sqrt() } else { 0.0 };
+    let bridge_m = bridge_1.max(0.0).sqrt();
     coef * (c1 + bridge_m) / maturity.sqrt()
 }
 /// Returns implied volatility from a call option with initial guess
@@ -1043,7 +1043,7 @@ mod tests {
         assert_approx_eq!(result.put_vega, put_vega(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_rho, put_rho(s, k, rate, sigma, maturity));
     }
-    
+
     #[test]
     fn constants_are_correct() {
         assert_approx_eq!(FRAC_1_SQRT_2PI, (2.0 * PI).sqrt().recip());
