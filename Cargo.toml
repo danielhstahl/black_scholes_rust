@@ -23,7 +23,3 @@ lto = true
 
 [badges]
 travis-ci = { repository = "danielhstahl/black_scholes_rust" }
-
-[[example]]
-name = "profile"
-src = "examples/profile.rs"
