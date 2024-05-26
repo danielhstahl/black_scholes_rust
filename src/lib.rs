@@ -462,7 +462,7 @@ pub fn call_charm(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
         -inc_norm(d1) * (2.0 * rate * maturity - d2 * sqrt_maturity_sigma)
             / (2.0 * maturity * sqrt_maturity_sigma)
     } else {
-        0.0 //check that this is true....
+        0.0 // TODO: check that this is true....
     }
 }
 
@@ -1044,6 +1044,111 @@ mod tests {
         assert_approx_eq!(result.put_rho, put_rho(s, k, rate, sigma, maturity));
     }
 
+    #[test]
+    fn call_delta_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_delta(s, k, rate, sigma, maturity), 1.0);
+    }
+
+    #[test]
+    fn put_delta_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(put_delta(s, k, rate, sigma, maturity), 0.0);
+    }
+
+    #[test]
+    fn call_delta_with_negative_maturity_and_s_less_than_k_works() {
+        let s = 510.0;
+        let sigma = 0.37;
+        let k = 550.88;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_delta(s, k, rate, sigma, maturity), 0.0);
+    }
+
+    #[test]
+    fn put_delta_with_negative_maturity_and_s_less_than_k_works() {
+        let s = 510.0;
+        let sigma = 0.37;
+        let k = 550.88;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(put_delta(s, k, rate, sigma, maturity), -1.0);
+    }
+
+    #[test]
+    fn call_gamma_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_gamma(s, k, rate, sigma, maturity), 0.0);
+    }
+
+    #[test]
+    fn theta_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_theta(s, k, rate, sigma, maturity), 0.0);
+        assert_approx_eq!(put_theta(s, k, rate, sigma, maturity), 0.0);
+    }
+
+    #[test]
+    fn rho_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_rho(s, k, rate, sigma, maturity), 0.0);
+        assert_approx_eq!(put_rho(s, k, rate, sigma, maturity), 0.0);
+    }
+
+    #[test]
+    fn vanna_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_vanna(s, k, rate, sigma, maturity), 0.0);
+        assert_approx_eq!(put_vanna(s, k, rate, sigma, maturity), 0.0);
+    }
+
+    #[test]
+    fn vomma_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_vomma(s, k, rate, sigma, maturity), 0.0);
+        assert_approx_eq!(put_vomma(s, k, rate, sigma, maturity), 0.0);
+    }
+
+    #[test]
+    fn charm_with_negative_maturity_works() {
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09;
+        assert_approx_eq!(call_charm(s, k, rate, sigma, maturity), 0.0); // TODO: check that this is true....
+        assert_approx_eq!(put_charm(s, k, rate, sigma, maturity), 0.0);
+    }
+    
     #[test]
     fn constants_are_correct() {
         assert_approx_eq!(FRAC_1_SQRT_2PI, (2.0 * PI).sqrt().recip());
