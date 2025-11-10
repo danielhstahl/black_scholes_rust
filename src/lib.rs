@@ -667,7 +667,7 @@ pub fn compute_all(
         let call_gamma = pdf_d1 / (stock * sqrt_maturity_sigma);
         let call_theta =
             -stock * pdf_d1 * sigma / (2.0 * sqrt_maturity) - rate * k_discount * cdf_d2;
-        let call_vega = stock * pdf_d1 * sqrt_maturity_sigma / sigma;
+        let call_vega = stock * pdf_d1 * sqrt_maturity;
         let call_rho = k_discount * maturity * cdf_d2;
         let call_vanna = call_vega / stock * (1.0 - d1 / sqrt_maturity_sigma);
         let call_vomma = call_vega * d1 * d2 / sigma;
