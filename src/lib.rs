@@ -839,9 +839,9 @@ pub fn black76(
 mod tests {
     use super::*;
     use approx::*;
-    use rand::distributions::{Distribution, Uniform};
-    use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use rand::distr::{Distribution, Uniform};
+    use rand::rngs::StdRng;
     use std::f64::consts::PI;
 
     fn get_rng_seed(seed: [u8; 32]) -> StdRng {
@@ -952,7 +952,7 @@ mod tests {
     fn call_iv_works_with_broad_set_of_numbers() {
         let seed: [u8; 32] = [2; 32];
         let mut rng_seed = get_rng_seed(seed);
-        let uniform = Uniform::new(0.0f64, 1.0);
+        let uniform = Uniform::new(0.0f64, 1.0).unwrap();
         let num_total: usize = 10000;
 
         (0..num_total).for_each(|_| {
