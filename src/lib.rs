@@ -8,15 +8,18 @@ use std::f64::consts::{FRAC_1_PI, FRAC_1_SQRT_2, FRAC_2_SQRT_PI, SQRT_2};
 #[allow(clippy::excessive_precision)]
 const FRAC_1_SQRT_2PI: f64 = 0.3989422804014326779399460599343818684758586311649346576659258296;
 
+// CDF of standard normal distribution
 fn cum_norm(x: f64) -> f64 {
     (x * FRAC_1_SQRT_2).error() * 0.5 + 0.5
 }
 
+// PDF of standard normal distribution
 fn inc_norm(x: f64) -> f64 {
     (-x.powi(2) * 0.5).exp() * FRAC_1_SQRT_2PI
 }
 
 fn d1(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
+    // equiv. to : ((s / k).ln() + (rate + 0.5 * sigma.powi(2)) * maturity) / sqrt_maturity_sigma
     (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma
 }
 
@@ -644,6 +647,8 @@ pub struct PricesAndGreeks {
 ///     maturity,
 /// );
 /// ```
+// Not using annualised dividend yield (i.e. using Black-Scholes, not Merton formula):
+// See https://github.com/danielhstahl/black_scholes_rust/issues/25 referring to https://www.macroption.com/black-scholes-formula/
 pub fn compute_all(
     stock: f64,
     strike: f64,
@@ -755,10 +760,42 @@ mod tests {
             );
         }};
     }
+
     #[test]
     fn sqrt_two_pi_is_right() {
         assert_abs_diff_eq!(SQRT_TWO_PI, (2.0 * PI).sqrt(), epsilon = 0.000000001);
     }
+    #[test]
+    fn constants_are_correct() {
+        assert_approx_eq!(FRAC_1_SQRT_2PI, (2.0 * PI).sqrt().recip());
+    }
+    #[test]
+    fn cum_norm_opposite() {
+        fn check(x: f64) {
+            assert_abs_diff_eq!(cum_norm(x) + cum_norm(-x), 1.0, epsilon = 0.000000001);
+        }
+        check(0.0);
+        check(0.1);
+        check(0.2);
+        check(0.9);
+        check(1.0);
+        check(2.0);
+        check(10.0);
+    }
+    #[test]
+    fn inc_norm_opposite() {
+        fn check(x: f64) {
+            assert_abs_diff_eq!(inc_norm(x), inc_norm(-x), epsilon = 0.000000001);
+        }
+        check(0.0);
+        check(0.1);
+        check(0.2);
+        check(0.9);
+        check(1.0);
+        check(2.0);
+        check(10.0);
+    }
+
     #[test]
     fn call_formula_works() {
         assert_approx_eq!(call(5.0, 4.5, 0.05, 0.3, 1.0), 0.9848721043419868);
@@ -1147,10 +1184,5 @@ mod tests {
         let maturity = -0.09;
         assert_approx_eq!(call_charm(s, k, rate, sigma, maturity), 0.0); // TODO: check that this is true....
         assert_approx_eq!(put_charm(s, k, rate, sigma, maturity), 0.0);
-    }
-    
-    #[test]
-    fn constants_are_correct() {
-        assert_approx_eq!(FRAC_1_SQRT_2PI, (2.0 * PI).sqrt().recip());
     }
 }
