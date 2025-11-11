@@ -732,6 +732,109 @@ pub fn compute_all(
     }
 }
 
+// For options on futures, https://en.wikipedia.org/wiki/Futures_contract#Options_on_futures refer to "Black-model" https://en.wikipedia.org/wiki/Black_model (published in 76)
+// Other ref: https://www.investopedia.com/terms/b/blacksmodel.asp
+//
+// One implementation showing formula for diff models: https://carlolepelaars.github.io/blackscholes/4.the_greeks_black76
+pub fn black76(
+    forward_price: f64,
+    strike: f64,
+    rate: f64,
+    sigma: f64,
+    maturity: f64,
+) -> PricesAndGreeks {
+    let discount = (-rate * maturity).exp();
+    let sqrt_maturity = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_maturity * sigma;
+    let k_discount = strike * discount;
+    if sqrt_maturity_sigma > 0.0 {
+        let ln_f_s = (forward_price / strike).ln();
+
+        let d1 = (ln_f_s + 0.5 * sigma.powi(2) * maturity) / sqrt_maturity_sigma;
+        let d2 = d1 - sqrt_maturity_sigma;
+        let cdf_d1 = cum_norm(d1); // often noted `N(d1)`
+        let cdf_d2 = cum_norm(d2);
+        let pdf_d1 = inc_norm(d1); // often noted `n(d1)`
+
+        let call_price = discount * (forward_price * cdf_d1 - strike * cdf_d2);
+
+        let call_delta = cdf_d1 * discount;
+        let call_gamma = discount * pdf_d1 / (forward_price * sqrt_maturity_sigma);
+        let call_theta = -forward_price * discount * pdf_d1 * sigma / (2.0 * sqrt_maturity)
+            - rate * k_discount * cdf_d2
+            + rate * forward_price * discount * cdf_d1;
+        let call_vega = forward_price * discount * pdf_d1 * sqrt_maturity;
+        let call_rho = -maturity * discount * (forward_price * cdf_d1 - strike * cdf_d2);
+        let call_vanna = (call_vega / forward_price) * (1.0 - d1 / sqrt_maturity_sigma);
+        let call_vomma = call_vega * d1 * d2 / sigma;
+
+        let charm_part = pdf_d1
+            * ((sigma / (4.0 * sqrt_maturity)) - (ln_f_s / (2.0 * sqrt_maturity_sigma * maturity)));
+        let call_charm = discount * ((-rate * cdf_d1) + charm_part);
+
+        // Deduce Put price from Call price using the put-call parity: https://en.wikipedia.org/wiki/Put%E2%80%93call_parity
+        //  `Call - Put = Discount . (Fwd - K)`
+        //
+        // Can also find put price from call price formula using `cdf(x) + cdf(-x) == 1` and `pdf(x) == pfd(-x)`
+        let put_price = call_price + discount * (strike - forward_price);
+
+        let put_delta = discount * (cdf_d1 - 1.0);
+        let put_gamma = call_gamma;
+
+        let put_theta = -forward_price * discount * pdf_d1 * sigma / (2.0 * sqrt_maturity)
+            + rate * k_discount * (1.0 - cdf_d2)
+            - rate * forward_price * discount * (1.0 - cdf_d1);
+        let put_vega = call_vega;
+        let put_rho =
+            -maturity * discount * (strike * (1.0 - cdf_d2) - forward_price * (1.0 - cdf_d1));
+        let put_vanna = call_vanna;
+        let put_vomma = call_vomma;
+        let put_charm = discount * ((rate * (1.0 - cdf_d1)) + charm_part);
+
+        PricesAndGreeks {
+            call_price,
+            call_delta,
+            call_gamma,
+            call_theta,
+            call_vega,
+            call_rho,
+            call_vanna,
+            call_vomma,
+            call_charm,
+            put_price,
+            put_delta,
+            put_gamma,
+            put_theta,
+            put_vega,
+            put_rho,
+            put_vanna,
+            put_vomma,
+            put_charm,
+        }
+    } else {
+        PricesAndGreeks {
+            call_price: max_or_zero(forward_price - strike),
+            call_delta: if forward_price > strike { 1.0 } else { 0.0 },
+            call_gamma: 0.0,
+            call_theta: 0.0,
+            call_vega: 0.0,
+            call_rho: 0.0,
+            call_vanna: 0.0,
+            call_vomma: 0.0,
+            put_price: max_or_zero(strike - forward_price),
+            put_delta: if strike > forward_price { -1.0 } else { 0.0 },
+            put_gamma: 0.0,
+            put_theta: 0.0,
+            put_vega: 0.0,
+            put_rho: 0.0,
+            put_vanna: 0.0,
+            put_vomma: 0.0,
+            call_charm: 0.0,
+            put_charm: 0.0,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1079,6 +1182,54 @@ mod tests {
         assert_approx_eq!(result.put_theta, put_theta(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_vega, put_vega(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_rho, put_rho(s, k, rate, sigma, maturity));
+    }
+
+    #[test]
+    fn black76_works() {
+        let s = 55.;
+        let k = 50.0;
+        let maturity = 1.0;
+        let sigma = 0.15;
+        let rate = 0.0025;
+        let PricesAndGreeks {
+            call_price,
+            call_delta,
+            call_gamma,
+            call_theta,
+            call_vega,
+            call_rho,
+            call_vanna,
+            call_vomma,
+            call_charm,
+            put_price,
+            put_delta,
+            put_gamma,
+            put_theta,
+            put_vega,
+            put_rho,
+            put_vanna,
+            put_vomma,
+            put_charm,
+        } = black76(s, k, rate, sigma, maturity);
+        assert_approx_eq!(call_price, 6.234516);
+        assert_approx_eq!(call_delta, 0.759371);
+        assert_approx_eq!(call_gamma, 0.037478);
+        assert_approx_eq!(call_theta, -1.259855);
+        assert_approx_eq!(call_vega, 17.005889);
+        assert_approx_eq!(call_rho, -6.234516);
+        assert_approx_eq!(call_vanna, -1.155166);
+        assert_approx_eq!(call_vomma, 45.134728);
+        assert_approx_eq!(call_charm, -0.088535); // value not verified externally :(
+
+        assert_approx_eq!(put_price, 1.247001);
+        assert_approx_eq!(put_delta, -0.238131);
+        assert_approx_eq!(put_gamma, 0.037478);
+        assert_approx_eq!(put_theta, -1.272324);
+        assert_approx_eq!(put_vega, 17.005889);
+        assert_approx_eq!(put_rho, -1.247001);
+        assert_approx_eq!(put_vanna, -1.155166);
+        assert_approx_eq!(put_vomma, 45.134728);
+        assert_approx_eq!(put_charm, -0.086042); // value not verified externally :(
     }
 
     #[test]
