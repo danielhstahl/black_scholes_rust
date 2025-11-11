@@ -19,19 +19,17 @@ jobs:
     - name: Run tests stable
       if: matrix.rust == 'stable'
       run: cargo test --verbose
-    - name: Run tests nightly with coverage
+
+    - name: Install cargo-llvm-cov
       if: matrix.rust == 'nightly' 
-      env:
-        CARGO_INCREMENTAL: 0
-        RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort
-        RUSTDOCFLAGS: -Cpanic=abort
-        CRATE_NAME: black_scholes
+      uses: taiki-e/install-action@cargo-llvm-cov
+      
+    - name: Generate code coverage for nightly
+      if: matrix.rust == 'nightly' 
       run: |
-        cargo build --verbose $CARGO_OPTIONS
-        cargo test --verbose $CARGO_OPTIONS
-        curl -L https://github.com/mozilla/grcov/releases/download/v0.7.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
-        zip -0 ccov.zip `find . \( -name "${CRATE_NAME}*.gc*" \) -print`
-        ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info
+        cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+        cat lcov.info
+          
     - name: Coveralls
       if: matrix.rust == 'nightly' 
       uses: coverallsapp/github-action@master
