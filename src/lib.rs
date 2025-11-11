@@ -732,6 +732,110 @@ pub fn compute_all(
     }
 }
 
+/// Returns call and put prices and greeks using Black-Scholes-Merton formula.
+///
+/// If `dividend_yield` is 0, this give same results as `compute_all` using Black-Scholes formula
+/// but `compute_all` will be slightly less compute intensive.
+///
+/// - `stock` (aka `S`): stock price ($$$ per share)
+/// - `strike` (aka `K`): strike price ($$$ per share)
+/// - `sigma` (aka `σ`): volatility (% p.a.)
+/// - `risk_free_rate` (aka `r`): annualised continuously compounded ris-free interest rate (% p.a.)
+/// - `dividend_yield` (aka `q`): annualised continuously compounded dividend yield (% p.a.)
+/// - `maturity` (aka `T`): time to maturity (% of years)
+pub fn bsm_compute_all(
+    stock: f64,
+    strike: f64,
+    sigma: f64,
+    risk_free_rate: f64,
+    dividend_yield: f64,
+    maturity: f64,
+) -> PricesAndGreeks {
+    let dividend = (-dividend_yield * maturity).exp();
+    let discount = (-risk_free_rate * maturity).exp();
+    let sqrt_maturity = maturity.sqrt();
+    let sqrt_maturity_sigma = sqrt_maturity * sigma;
+    let k_discount = strike * discount;
+    if sqrt_maturity_sigma > 0.0 {
+        let d1 = ((stock / strike).ln()
+            + (risk_free_rate - dividend_yield + 0.5 * sigma.powi(2)) * maturity)
+            / sqrt_maturity_sigma;
+        let d2 = d1 - sqrt_maturity_sigma;
+        let cdf_d1 = cum_norm(d1);
+        let cdf_d2 = cum_norm(d2);
+        let pdf_d1 = inc_norm(d1);
+
+        let call_price = stock * dividend * cdf_d1 - k_discount * cdf_d2;
+        let call_delta = dividend * cdf_d1;
+        let call_gamma = dividend * pdf_d1 / (stock * sqrt_maturity_sigma);
+        let call_theta = -dividend * stock * pdf_d1 * sigma / (2.0 * sqrt_maturity)
+            - risk_free_rate * k_discount * cdf_d2
+            + dividend_yield * stock * dividend * cdf_d1;
+        let call_vega = stock * pdf_d1 * sqrt_maturity;
+        let call_rho = k_discount * maturity * cdf_d2;
+        let call_vanna = call_vega / stock * (1.0 - d1 / sqrt_maturity_sigma);
+        let call_vomma = call_vega * d1 * d2 / sigma;
+        let charm_part = dividend
+            * pdf_d1
+            * (2.0 * (risk_free_rate - dividend_yield) * maturity - d2 * sqrt_maturity_sigma)
+            / (2.0 * maturity * sqrt_maturity_sigma);
+        let call_charm = dividend_yield * dividend * cdf_d1 - charm_part;
+
+        let put_price = call_price + k_discount - stock * dividend;
+        let put_delta = dividend * (cdf_d1 - 1.0);
+        let put_gamma = call_gamma;
+        let put_theta = -dividend * stock * pdf_d1 * sigma / (2.0 * sqrt_maturity)
+            + risk_free_rate * k_discount * (1.0 - cdf_d2)
+            - dividend_yield * stock * dividend * (1.0 - cdf_d1);
+        let put_vega = call_vega;
+        let put_rho = -k_discount * maturity * (1.0 - cdf_d2);
+        let put_vanna = call_vanna;
+        let put_vomma = call_vomma;
+        let put_charm = -dividend_yield * dividend * (1.0 - cdf_d1) - charm_part;
+        PricesAndGreeks {
+            call_price,
+            call_delta,
+            call_gamma,
+            call_theta,
+            call_vega,
+            call_rho,
+            call_vanna,
+            call_vomma,
+            call_charm,
+            put_price,
+            put_delta,
+            put_gamma,
+            put_theta,
+            put_vega,
+            put_rho,
+            put_vanna,
+            put_vomma,
+            put_charm,
+        }
+    } else {
+        PricesAndGreeks {
+            call_price: max_or_zero(stock - strike),
+            call_delta: if stock > strike { 1.0 } else { 0.0 },
+            call_gamma: 0.0,
+            call_theta: 0.0,
+            call_vega: 0.0,
+            call_rho: 0.0,
+            call_vanna: 0.0,
+            call_vomma: 0.0,
+            call_charm: 0.0,
+            put_price: max_or_zero(strike - stock),
+            put_delta: if strike > stock { -1.0 } else { 0.0 },
+            put_gamma: 0.0,
+            put_theta: 0.0,
+            put_vega: 0.0,
+            put_rho: 0.0,
+            put_vanna: 0.0,
+            put_vomma: 0.0,
+            put_charm: 0.0,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1079,6 +1183,115 @@ mod tests {
         assert_approx_eq!(result.put_theta, put_theta(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_vega, put_vega(s, k, rate, sigma, maturity));
         assert_approx_eq!(result.put_rho, put_rho(s, k, rate, sigma, maturity));
+    }
+
+    #[test]
+    fn bsm_compute_all_zero_q() {
+        // If `q` is zero, `bsm_compute_all`` is equiv. to `compute_all`
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.05;
+        let q = 0.0;
+        let maturity = 0.09;
+
+        let r0 = compute_all(s, k, rate, sigma, maturity);
+        let r1 = bsm_compute_all(s, k, sigma, rate, q, maturity);
+
+        let PricesAndGreeks {
+            call_price,
+            call_delta,
+            call_gamma,
+            call_theta,
+            call_vega,
+            call_rho,
+            call_vanna,
+            call_vomma,
+            call_charm,
+            put_price,
+            put_delta,
+            put_gamma,
+            put_theta,
+            put_vega,
+            put_rho,
+            put_vanna,
+            put_vomma,
+            put_charm,
+        } = r0;
+        macro_rules! check {
+            ($field:ident) => {{
+                assert_approx_eq!($field, r1.$field);
+            }};
+        }
+        check!(call_price);
+        check!(call_delta);
+        check!(call_gamma);
+        check!(call_theta);
+        check!(call_vega);
+        check!(call_rho);
+        check!(call_vanna);
+        check!(call_vomma);
+        check!(call_charm);
+        check!(put_price);
+        check!(put_delta);
+        check!(put_gamma);
+        check!(put_theta);
+        check!(put_vega);
+        check!(put_rho);
+        check!(put_vanna);
+        check!(put_vomma);
+        check!(put_charm);
+    }
+
+    #[test]
+    fn bsm_compute_all_works() {
+        // Compare value to https://github.com/CarloLepelaars/blackscholes
+        // (with fix for theta: https://github.com/CarloLepelaars/blackscholes/pull/26)
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.05;
+        let q = 0.03;
+        let maturity = 0.09;
+
+        let PricesAndGreeks {
+            call_price,
+            call_delta,
+            call_gamma,
+            call_theta,
+            call_vega,
+            call_rho,
+            call_vanna,
+            call_vomma,
+            call_charm,
+            put_price,
+            put_delta,
+            put_gamma,
+            put_theta,
+            put_vega,
+            put_rho,
+            put_vanna,
+            put_vomma,
+            put_charm,
+        } = bsm_compute_all(s, k, sigma, rate, q, maturity);
+        assert_approx_eq!(call_price, 49.9003280);
+        assert_approx_eq!(call_delta, 0.7761726197638565);
+        assert_approx_eq!(call_gamma, 0.004850905458223078);
+        assert_approx_eq!(call_theta, -106.82167402360267);
+        assert_approx_eq!(call_vega, 49.15340973000121);
+        assert_approx_eq!(call_rho, 33.99098802331468);
+        assert_approx_eq!(call_vanna, -0.5268153918879713);
+        assert_approx_eq!(call_vomma, 66.72271336536006);
+        assert_approx_eq!(call_charm, 1.049818266353188);
+        assert_approx_eq!(put_price, 8.215853933440584);
+        assert_approx_eq!(put_delta, -0.22113102195785656);
+        assert_approx_eq!(put_gamma, 0.004850905458223078);
+        assert_approx_eq!(put_theta, -97.91800512749833);
+        assert_approx_eq!(put_vega, 49.15340973000121);
+        assert_approx_eq!(put_rho, -11.702926017862612);
+        assert_approx_eq!(put_vanna, -0.5268153918879713);
+        assert_approx_eq!(put_vomma, 66.72271336536006);
+        assert_approx_eq!(put_charm, 1.0198991571015366);
     }
 
     #[test]
