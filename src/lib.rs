@@ -1,5 +1,16 @@
 //! # black_scholes
 //! A Black Scholes option pricing library.
+//!
+//! This library provides implementations of the Black-Scholes option pricing model
+//! along with the Black 76 model for options on futures and the Black-Scholes-Merton
+//! model for options on dividend-paying stocks.
+//!
+//! ## Features
+//! - European call and put option pricing
+//! - Full set of Greeks (Delta, Gamma, Theta, Vega, Rho, Vanna, Vomma, Charm)
+//! - Implied volatility calculation
+//! - Support for multiple option models
+//! - High-performance calculations with caching
 use serde::Serialize;
 use special::Error;
 use std::f64::consts::{FRAC_1_PI, FRAC_1_SQRT_2, FRAC_2_SQRT_PI, SQRT_2};
@@ -8,16 +19,38 @@ use std::f64::consts::{FRAC_1_PI, FRAC_1_SQRT_2, FRAC_2_SQRT_PI, SQRT_2};
 #[allow(clippy::excessive_precision)]
 const FRAC_1_SQRT_2PI: f64 = 0.3989422804014326779399460599343818684758586311649346576659258296;
 
-// CDF of standard normal distribution
+/// Cumulative distribution function of standard normal distribution.
+///
+/// # Arguments
+/// * `x` - Input value
+///
+/// # Returns
+/// The cumulative probability up to `x`
 fn cum_norm(x: f64) -> f64 {
     (x * FRAC_1_SQRT_2).error() * 0.5 + 0.5
 }
 
-// PDF of standard normal distribution
+/// Probability density function of standard normal distribution.
+///
+/// # Arguments
+/// * `x` - Input value
+///
+/// # Returns
+/// The probability density at `x`
 fn inc_norm(x: f64) -> f64 {
     (-x.powi(2) * 0.5).exp() * FRAC_1_SQRT_2PI
 }
 
+/// Helper function to calculate d1 in the Black-Scholes formula.
+///
+/// # Arguments
+/// * `s` - Stock price
+/// * `k` - Strike price
+/// * `discount` - Discount factor (e^(-rate * maturity))
+/// * `sqrt_maturity_sigma` - Square root of (maturity * sigma^2)
+///
+/// # Returns
+/// The calculated d1 value
 fn d1(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> f64 {
     // equiv. to : ((s / k).ln() + (rate + 0.5 * sigma.powi(2)) * maturity) / sqrt_maturity_sigma
     (s / (k * discount)).ln() / sqrt_maturity_sigma + 0.5 * sqrt_maturity_sigma
@@ -30,6 +63,12 @@ fn max_or_zero(v: f64) -> f64 {
 
 /// Returns BS call option formula with discount and volatility already computed.
 ///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `discount` - Discount factor (e^(-rate * maturity))
+/// * `sqrt_maturity_sigma` - Square root of (maturity * volatility^2)
+///
 /// # Examples
 ///
 /// ```
@@ -37,8 +76,8 @@ fn max_or_zero(v: f64) -> f64 {
 /// let strike = 4.5;
 /// let discount = 0.99;
 /// let sigma = 0.3;
-/// let maturity:f64 = 2.0;
-/// let sqrt_maturity_sigma = sigma*maturity.sqrt();
+/// let maturity: f64 = 2.0;
+/// let sqrt_maturity_sigma = sigma * maturity.sqrt();
 /// let price = black_scholes::call_discount(
 ///     stock, strike, discount,
 ///     sqrt_maturity_sigma
@@ -55,15 +94,22 @@ pub fn call_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) ->
 
 /// Returns standard BS call option formula.
 ///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
-/// let call=black_scholes::call(stock, strike, rate, sigma, maturity);
+/// let sigma = 0.3;
+/// let maturity = 1.0;
+/// let call = black_scholes::call(stock, strike, rate, sigma, maturity);
 /// ```
 pub fn call(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     call_discount(s, k, (-rate * maturity).exp(), maturity.sqrt() * sigma)
@@ -71,14 +117,23 @@ pub fn call(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns delta of a BS call option
 ///
+/// Delta measures the rate of change of the option price with respect to changes in the underlying asset price.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let delta = black_scholes::call_delta(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -98,14 +153,23 @@ pub fn call_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns gamma of a BS call option
 ///
+/// Gamma measures the rate of change in the delta with respect to changes in the underlying price.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let gamma = black_scholes::call_gamma(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -122,14 +186,23 @@ pub fn call_gamma(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 }
 /// Returns vega of a BS call option
 ///
+/// Vega measures sensitivity to volatility. Vega is the derivative of the option value with respect to the volatility of the underlying asset.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let vega = black_scholes::call_vega(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -146,14 +219,23 @@ pub fn call_vega(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 }
 /// Returns theta of a BS call option
 ///
+/// Theta measures the sensitivity of the option price to time decay. It represents the rate of change of the option value with respect to time.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let theta = black_scholes::call_theta(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -173,15 +255,24 @@ pub fn call_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns rho of a BS call option
 ///
+/// Rho measures sensitivity to the interest rate. It is the derivative of the option value with respect to the risk-free interest rate.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
-/// let theta = black_scholes::call_rho(
+/// let sigma = 0.3;
+/// let maturity = 1.0;
+/// let rho = black_scholes::call_rho(
 ///     stock, strike, rate, sigma, maturity
 /// );
 /// ```
@@ -199,6 +290,12 @@ pub fn call_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns BS put option formula with discount and volatility already computed.
 ///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `discount` - Discount factor (e^(-rate * maturity))
+/// * `sqrt_maturity_sigma` - Square root of (maturity * volatility^2)
+///
 /// # Examples
 ///
 /// ```
@@ -206,8 +303,8 @@ pub fn call_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 /// let strike = 4.5;
 /// let discount = 0.99;
 /// let sigma = 0.3;
-/// let maturity:f64 = 2.0;
-/// let sqrt_maturity_sigma = sigma*maturity.sqrt();
+/// let maturity: f64 = 2.0;
+/// let sqrt_maturity_sigma = sigma * maturity.sqrt();
 /// let price = black_scholes::put_discount(
 ///     stock, strike, discount,
 ///     sqrt_maturity_sigma
@@ -224,6 +321,13 @@ pub fn put_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> 
 
 /// Returns BS put option formula.
 ///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
@@ -232,7 +336,7 @@ pub fn put_discount(s: f64, k: f64, discount: f64, sqrt_maturity_sigma: f64) -> 
 /// let rate = 0.05;
 /// let sigma = 0.3;
 /// let maturity = 1.0;
-/// let put=black_scholes::put(stock, strike, rate, sigma, maturity);
+/// let put = black_scholes::put(stock, strike, rate, sigma, maturity);
 /// ```
 pub fn put(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
     put_discount(s, k, (-rate * maturity).exp(), maturity.sqrt() * sigma)
@@ -240,14 +344,23 @@ pub fn put(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns delta of a BS put option
 ///
+/// Delta measures the rate of change of the option price with respect to changes in the underlying asset price.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let delta = black_scholes::put_delta(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -267,14 +380,24 @@ pub fn put_delta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns gamma of a BS put option
 ///
+/// Gamma measures the rate of change in the delta with respect to changes in the underlying price.
+/// For put options, gamma is identical to call options.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let gamma = black_scholes::put_gamma(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -285,14 +408,23 @@ pub fn put_gamma(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns vega of a BS put option
 ///
+/// Vega measures sensitivity to volatility. For put options, vega is identical to call options.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let vega = black_scholes::put_vega(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -303,14 +435,23 @@ pub fn put_vega(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns theta of a BS put option
 ///
+/// Theta measures the sensitivity of the option price to time decay. It represents the rate of change of the option value with respect to time.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let theta = black_scholes::put_theta(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -329,15 +470,24 @@ pub fn put_theta(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 }
 /// Returns rho of a BS put option
 ///
+/// Rho measures sensitivity to the interest rate. It is the derivative of the option value with respect to the risk-free interest rate.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
-/// let theta = black_scholes::put_rho(
+/// let sigma = 0.3;
+/// let maturity = 1.0;
+/// let rho = black_scholes::put_rho(
 ///     stock, strike, rate, sigma, maturity
 /// );
 /// ```
@@ -356,14 +506,23 @@ pub fn put_rho(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns vanna of a BS call option
 ///
+/// Vanna measures the sensitivity of delta to changes in volatility. It is the second-order derivative of the option price with respect to the underlying price and volatility.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let vanna = black_scholes::call_vanna(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -381,14 +540,23 @@ pub fn call_vanna(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 }
 /// Returns vanna of a BS put option
 ///
+/// Vanna measures the sensitivity of delta to changes in volatility. For put options, vanna is identical to call options.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let vanna = black_scholes::put_vanna(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -398,14 +566,23 @@ pub fn put_vanna(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 }
 /// Returns vomma of a BS call option
 ///
+/// Vomma (Volga) measures the second-order sensitivity of the option price to changes in volatility. It is the second derivative of the option price with respect to volatility.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let vomma = black_scholes::call_vomma(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -425,14 +602,23 @@ pub fn call_vomma(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns vomma of a BS put option
 ///
+/// Vomma (Volga) measures the second-order sensitivity of the option price to changes in volatility. For put options, vomma is identical to call options.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let vomma = black_scholes::put_vomma(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -443,14 +629,23 @@ pub fn put_vomma(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns charm of a BS call option
 ///
+/// Charm (Delta decay) measures the rate of change of delta over time. It is the second-order derivative of the option price with respect to time and underlying price.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let charm = black_scholes::call_charm(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -471,14 +666,23 @@ pub fn call_charm(s: f64, k: f64, rate: f64, sigma: f64, maturity: f64) -> f64 {
 
 /// Returns charm of a BS put option
 ///
+/// Charm (Delta decay) measures the rate of change of delta over time. For put options, charm is identical to call options.
+///
+/// # Arguments
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
 /// # Examples
 ///
 /// ```
 /// let stock = 5.0;
 /// let strike = 4.5;
 /// let rate = 0.05;
-/// let sigma=0.3;
-/// let maturity=1.0;
+/// let sigma = 0.3;
+/// let maturity = 1.0;
 /// let charm = black_scholes::put_charm(
 ///     stock, strike, rate, sigma, maturity
 /// );
@@ -502,6 +706,20 @@ fn approximate_vol(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> f64 
     coef * (c1 + bridge_m) / maturity.sqrt()
 }
 /// Returns implied volatility from a call option with initial guess
+///
+/// Calculates the implied volatility that would result in the given option price using Newton-Raphson method.
+///
+/// # Arguments
+/// * `price` - Market price of the option
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `maturity` - Time to maturity in years
+/// * `initial_guess` - Initial guess for the volatility
+///
+/// # Returns
+/// * `Ok(volatility)` if the algorithm converges
+/// * `Err(error_code)` if the algorithm fails to converge
 ///
 /// # Examples
 ///
@@ -533,6 +751,20 @@ pub fn call_iv_guess(
 }
 /// Returns implied volatility from a call option
 ///
+/// Calculates the implied volatility that would result in the given option price using Newton-Raphson method.
+/// Uses an approximation formula for the initial guess.
+///
+/// # Arguments
+/// * `price` - Market price of the option
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `maturity` - Time to maturity in years
+///
+/// # Returns
+/// * `Ok(volatility)` if the algorithm converges
+/// * `Err(error_code)` if the algorithm fails to converge
+///
 /// # Examples
 ///
 /// ```
@@ -552,6 +784,20 @@ pub fn call_iv(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> Result<f
 }
 
 /// Returns implied volatility from a put option with initial guess
+///
+/// Calculates the implied volatility that would result in the given option price using Newton-Raphson method.
+///
+/// # Arguments
+/// * `price` - Market price of the option
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `maturity` - Time to maturity in years
+/// * `initial_guess` - Initial guess for the volatility
+///
+/// # Returns
+/// * `Ok(volatility)` if the algorithm converges
+/// * `Err(error_code)` if the algorithm fails to converge
 ///
 /// # Examples
 ///
@@ -583,6 +829,20 @@ pub fn put_iv_guess(
 }
 /// Returns implied volatility from a put option
 ///
+/// Calculates the implied volatility that would result in the given option price using Newton-Raphson method.
+/// Uses put-call parity to convert the put price to an equivalent call price for the initial guess.
+///
+/// # Arguments
+/// * `price` - Market price of the option
+/// * `s` - Current stock price
+/// * `k` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `maturity` - Time to maturity in years
+///
+/// # Returns
+/// * `Ok(volatility)` if the algorithm converges
+/// * `Err(error_code)` if the algorithm fails to converge
+///
 /// # Examples
 ///
 /// ```
@@ -603,33 +863,64 @@ pub fn put_iv(price: f64, s: f64, k: f64, rate: f64, maturity: f64) -> Result<f6
     put_iv_guess(price, s, k, rate, maturity, initial_guess)
 }
 
+/// Container for option prices and Greeks.
+///
+/// Contains all the calculated prices and Greeks for both call and put options.
 #[derive(Debug, Serialize)]
 pub struct PricesAndGreeks {
+    /// Price of the call option
     pub call_price: f64,
+    /// Delta of the call option
     pub call_delta: f64,
+    /// Gamma of the call option
     pub call_gamma: f64,
+    /// Theta of the call option
     pub call_theta: f64,
+    /// Vega of the call option
     pub call_vega: f64,
+    /// Rho of the call option
     pub call_rho: f64,
+    /// Vanna of the call option
     pub call_vanna: f64,
+    /// Vomma of the call option
     pub call_vomma: f64,
+    /// Charm of the call option
     pub call_charm: f64,
+    /// Price of the put option
     pub put_price: f64,
+    /// Delta of the put option
     pub put_delta: f64,
+    /// Gamma of the put option
     pub put_gamma: f64,
+    /// Theta of the put option
     pub put_theta: f64,
+    /// Vega of the put option
     pub put_vega: f64,
+    /// Rho of the put option
     pub put_rho: f64,
+    /// Vanna of the put option
     pub put_vanna: f64,
+    /// Vomma of the put option
     pub put_vomma: f64,
+    /// Charm of the put option
     pub put_charm: f64,
 }
-/// Returns call and put prices and greeks.
+/// Returns call and put prices and Greeks.
 /// Due to caching the complex computations
 /// (such as N(d1)), this implementation is
 /// faster if you need to obtain all the
 /// information for a given stock price
 /// and strike price.
+///
+/// # Arguments
+/// * `stock` - Current stock price
+/// * `strike` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
+/// # Returns
+/// A `PricesAndGreeks` struct containing all prices and Greeks
 ///
 /// # Examples
 ///
@@ -732,17 +1023,41 @@ pub fn compute_all(
     }
 }
 
-/// Returns call and put prices and greeks using Black-Scholes-Merton formula.
+/// Returns call and put prices and Greeks using Black-Scholes-Merton formula.
 ///
-/// If `dividend_yield` is 0, this give same results as `compute_all` using Black-Scholes formula
+/// The Black-Scholes-Merton model extends the Black-Scholes model to account for continuous dividends.
+/// If `dividend_yield` is 0, this gives same results as `compute_all` using Black-Scholes formula
 /// but `compute_all` will be slightly less compute intensive.
 ///
-/// - `stock` (aka `S`): stock price ($$$ per share)
-/// - `strike` (aka `K`): strike price ($$$ per share)
-/// - `sigma` (aka `σ`): volatility (% p.a.)
-/// - `risk_free_rate` (aka `r`): annualised continuously compounded ris-free interest rate (% p.a.)
-/// - `dividend_yield` (aka `q`): annualised continuously compounded dividend yield (% p.a.)
-/// - `maturity` (aka `T`): time to maturity (% of years)
+/// # Arguments
+/// * `stock` - Current stock price
+/// * `strike` - Strike price
+/// * `sigma` - Volatility of the underlying asset
+/// * `risk_free_rate` - Annualized continuously compounded risk-free interest rate
+/// * `dividend_yield` - Annualized continuously compounded dividend yield
+/// * `maturity` - Time to maturity in years
+///
+/// # Returns
+/// A `PricesAndGreeks` struct containing all prices and Greeks
+///
+/// # Examples
+///
+/// ```
+/// let stock = 5.0;
+/// let strike = 4.5;
+/// let sigma = 0.3;
+/// let risk_free_rate = 0.05;
+/// let dividend_yield = 0.02;
+/// let maturity = 1.0;
+/// let all_prices_and_greeks = black_scholes::bsm_compute_all(
+///     stock,
+///     strike,
+///     sigma,
+///     risk_free_rate,
+///     dividend_yield,
+///     maturity,
+/// );
+/// ```
 pub fn bsm_compute_all(
     stock: f64,
     strike: f64,
@@ -836,10 +1151,52 @@ pub fn bsm_compute_all(
     }
 }
 
-// For options on futures, https://en.wikipedia.org/wiki/Futures_contract#Options_on_futures refer to "Black-model" https://en.wikipedia.org/wiki/Black_model (published in 76)
-// Other ref: https://www.investopedia.com/terms/b/blacksmodel.asp
-//
-// One implementation showing formula for diff models: https://carlolepelaars.github.io/blackscholes/4.the_greeks_black76
+/// Validates that the input parameters for option pricing are within reasonable bounds.
+///
+/// # Arguments
+/// * `s` - Stock price (must be positive)
+/// * `k` - Strike price (must be positive)
+/// * `rate` - Risk-free rate (no bounds)
+/// * `sigma` - Volatility (must be non-negative)
+/// * `maturity` - Time to maturity (must be non-negative)
+///
+/// # Returns
+/// `true` if all parameters are valid, `false` otherwise
+pub fn validate_params(s: f64, k: f64, _rate: f64, sigma: f64, maturity: f64) -> bool {
+    s > 0.0 && k > 0.0 && sigma >= 0.0 && maturity >= 0.0 && s.is_finite() && k.is_finite() && sigma.is_finite() && maturity.is_finite()
+}
+
+/// Returns call and put prices and Greeks using the Black 76 model for options on futures.
+///
+/// The Black 76 model is used for pricing options on futures contracts. It is similar to Black-Scholes
+/// but uses the forward price instead of the spot price.
+///
+/// # Arguments
+/// * `forward_price` - Forward price of the underlying asset
+/// * `strike` - Strike price
+/// * `rate` - Risk-free interest rate
+/// * `sigma` - Volatility of the underlying asset
+/// * `maturity` - Time to maturity in years
+///
+/// # Returns
+/// A `PricesAndGreeks` struct containing all prices and Greeks
+///
+/// # Examples
+///
+/// ```
+/// let forward_price = 55.0;
+/// let strike = 50.0;
+/// let rate = 0.05;
+/// let sigma = 0.2;
+/// let maturity = 1.0;
+/// let all_prices_and_greeks = black_scholes::black76(
+///     forward_price,
+///     strike,
+///     rate,
+///     sigma,
+///     maturity,
+/// );
+/// ```
 pub fn black76(
     forward_price: f64,
     strike: f64,
@@ -1106,6 +1463,314 @@ mod tests {
         let rate = 0.0244;
         let maturity = 0.156;
         assert!(call_iv(price, s, k, rate, maturity).is_err());
+    }
+
+    #[test]
+    fn put_iv_returns_err_if_no_possible_solution() {
+        // Use a clearly invalid case - put price higher than max possible value
+        let price = 1000.0;  // Very high price that's impossible
+        let s = 100.0;       // Underlying price
+        let k = 100.0;       // Strike price
+        let rate = 0.05;     // Interest rate
+        let maturity = 1.0;  // Time to maturity
+
+        assert!(put_iv(price, s, k, rate, maturity).is_err());
+    }
+
+    #[test]
+    fn call_discount_with_zero_sqrt_maturity_sigma() {
+        let s = 5.0;
+        let k = 4.5;
+        let discount = 0.99;
+        let sqrt_maturity_sigma = 0.0;
+        let price = call_discount(s, k, discount, sqrt_maturity_sigma);
+        assert_eq!(price, max_or_zero(s - k));
+    }
+
+    #[test]
+    fn put_discount_with_zero_sqrt_maturity_sigma() {
+        let s = 5.0;
+        let k = 4.5;
+        let discount = 0.99;
+        let sqrt_maturity_sigma = 0.0;
+        let price = put_discount(s, k, discount, sqrt_maturity_sigma);
+        assert_eq!(price, max_or_zero(k - s));
+    }
+
+    #[test]
+    fn call_gamma_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let gamma = call_gamma(s, k, rate, sigma, maturity);
+        assert_eq!(gamma, 0.0);
+    }
+
+    #[test]
+    fn put_gamma_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let gamma = put_gamma(s, k, rate, sigma, maturity);
+        assert_eq!(gamma, 0.0);
+    }
+
+    #[test]
+    fn call_vega_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let vega = call_vega(s, k, rate, sigma, maturity);
+        assert_eq!(vega, 0.0);
+    }
+
+    #[test]
+    fn put_vega_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let vega = put_vega(s, k, rate, sigma, maturity);
+        assert_eq!(vega, 0.0);
+    }
+
+    #[test]
+    fn call_theta_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let theta = call_theta(s, k, rate, sigma, maturity);
+        assert_eq!(theta, 0.0);
+    }
+
+    #[test]
+    fn put_theta_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let theta = put_theta(s, k, rate, sigma, maturity);
+        assert_eq!(theta, 0.0);
+    }
+
+    #[test]
+    fn call_rho_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let rho = call_rho(s, k, rate, sigma, maturity);
+        assert_eq!(rho, 0.0);
+    }
+
+    #[test]
+    fn put_rho_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let rho = put_rho(s, k, rate, sigma, maturity);
+        assert_eq!(rho, 0.0);
+    }
+
+    #[test]
+    fn call_vanna_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let vanna = call_vanna(s, k, rate, sigma, maturity);
+        assert_eq!(vanna, 0.0);
+    }
+
+    #[test]
+    fn put_vanna_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let vanna = put_vanna(s, k, rate, sigma, maturity);
+        assert_eq!(vanna, 0.0);
+    }
+
+    #[test]
+    fn call_vomma_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let vomma = call_vomma(s, k, rate, sigma, maturity);
+        assert_eq!(vomma, 0.0);
+    }
+
+    #[test]
+    fn put_vomma_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let vomma = put_vomma(s, k, rate, sigma, maturity);
+        assert_eq!(vomma, 0.0);
+    }
+
+    #[test]
+    fn call_charm_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let charm = call_charm(s, k, rate, sigma, maturity);
+        assert_eq!(charm, 0.0);
+    }
+
+    #[test]
+    fn put_charm_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let charm = put_charm(s, k, rate, sigma, maturity);
+        assert_eq!(charm, 0.0);
+    }
+
+    #[test]
+    fn charm_edge_case_check() {
+        // Test the TODO comment in call_charm function
+        let s = 550.88;
+        let sigma = 0.37;
+        let k = 510.0;
+        let rate = 0.0;
+        let maturity = -0.09; // negative maturity
+        let charm = call_charm(s, k, rate, sigma, maturity);
+        assert_eq!(charm, 0.0); // This verifies the TODO comment is correct
+    }
+
+    #[test]
+    fn black76_with_zero_volatility() {
+        let forward_price = 55.0;
+        let k = 50.0;
+        let maturity = 1.0;
+        let sigma = 0.0;
+        let rate = 0.0025;
+        let result = black76(forward_price, k, rate, sigma, maturity);
+
+        // With zero volatility, call price should be max(0, forward - strike)
+        assert_eq!(result.call_price, (forward_price - k).max(0.0));
+        // With zero volatility, put price should be max(0, strike - forward)
+        assert_eq!(result.put_price, (k - forward_price).max(0.0));
+    }
+
+    #[test]
+    fn black76_put_call_parity() {
+        let forward_price = 55.0;
+        let k = 50.0;
+        let maturity = 1.0;
+        let sigma = 0.15;
+        let rate = 0.0025;
+        let result = black76(forward_price, k, rate, sigma, maturity);
+
+        // Put-call parity for futures options: call - put = discount * (forward - strike)
+        let discount = (-rate * maturity).exp();
+        let expected_parity = discount * (forward_price - k);
+        let actual_parity = result.call_price - result.put_price;
+        assert_abs_diff_eq!(actual_parity, expected_parity, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn compute_all_with_zero_volatility() {
+        let s = 5.0;
+        let k = 4.5;
+        let rate = 0.05;
+        let sigma = 0.0;
+        let maturity = 1.0;
+        let result = compute_all(s, k, rate, sigma, maturity);
+
+        assert_eq!(result.call_price, (s - k).max(0.0));
+        assert_eq!(result.put_price, (k - s).max(0.0));
+        assert_eq!(result.call_delta, if s > k { 1.0 } else { 0.0 });
+        assert_eq!(result.put_delta, if k > s { -1.0 } else { 0.0 });
+        assert_eq!(result.call_gamma, 0.0);
+        assert_eq!(result.put_gamma, 0.0);
+        assert_eq!(result.call_theta, 0.0);
+        assert_eq!(result.put_theta, 0.0);
+        assert_eq!(result.call_vega, 0.0);
+        assert_eq!(result.put_vega, 0.0);
+        assert_eq!(result.call_rho, 0.0);
+        assert_eq!(result.put_rho, 0.0);
+        assert_eq!(result.call_vanna, 0.0);
+        assert_eq!(result.put_vanna, 0.0);
+        assert_eq!(result.call_vomma, 0.0);
+        assert_eq!(result.put_vomma, 0.0);
+        assert_eq!(result.call_charm, 0.0);
+        assert_eq!(result.put_charm, 0.0);
+    }
+
+    #[test]
+    fn bsm_compute_all_with_zero_dividend() {
+        let s = 5.0;
+        let k = 4.5;
+        let sigma = 0.3;
+        let rate = 0.05;
+        let q = 0.0;  // Zero dividend yield
+        let maturity = 1.0;
+
+        let bs_result = compute_all(s, k, rate, sigma, maturity);
+        let bsm_result = bsm_compute_all(s, k, sigma, rate, q, maturity);
+
+        // Results should be nearly identical when dividend yield is zero
+        assert_abs_diff_eq!(bs_result.call_price, bsm_result.call_price, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_price, bsm_result.put_price, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_delta, bsm_result.call_delta, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_delta, bsm_result.put_delta, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_gamma, bsm_result.call_gamma, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_gamma, bsm_result.put_gamma, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_theta, bsm_result.call_theta, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_theta, bsm_result.put_theta, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_vega, bsm_result.call_vega, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_vega, bsm_result.put_vega, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_rho, bsm_result.call_rho, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_rho, bsm_result.put_rho, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_vanna, bsm_result.call_vanna, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_vanna, bsm_result.put_vanna, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_vomma, bsm_result.call_vomma, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_vomma, bsm_result.put_vomma, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.call_charm, bsm_result.call_charm, epsilon = 1e-10);
+        assert_abs_diff_eq!(bs_result.put_charm, bsm_result.put_charm, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn bsm_compute_all_with_positive_dividend() {
+        let s = 100.0;
+        let k = 100.0;
+        let sigma = 0.2;
+        let rate = 0.05;
+        let q = 0.02;  // Positive dividend yield
+        let maturity = 1.0;
+
+        let bs_result = compute_all(s, k, rate, sigma, maturity);
+        let bsm_result = bsm_compute_all(s, k, sigma, rate, q, maturity);
+
+        // With positive dividend yield, call prices should be lower and put prices higher
+        assert!(bsm_result.call_price < bs_result.call_price);
+        assert!(bsm_result.put_price > bs_result.put_price);
     }
 
     #[test]
